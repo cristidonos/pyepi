@@ -17,7 +17,10 @@ RAW_DATA
 
 The output will be generated in Freesurfer's $SUBJECTS_DIR folder.
 
-
+To be called with 2 positional arguments:
+    - SUBJECT_ID
+    - VERBOSE (optional, if second argument exist verbose=True)
+ex: python3 preprocess_new_patient SEEG77 verbose
 
 """
 
@@ -27,8 +30,16 @@ from pyepi.tools import paths
 import os
 import sys
 
-RAW_DATA = '/mnt/d/CloudSynology/rawdata/'
-SUBJECTS_DIR = '/mnt/d/CloudSynology/subjects/'
+
+if sys.platform == 'win32':
+    # Cristi's WSL setup
+    RAW_DATA = '/mnt/d/CloudSynology/rawdata/'
+    SUBJECTS_DIR = '/mnt/d/CloudSynology/subjects/'
+if sys.platform == 'linux':
+    # Cristi's Virtual Box setup (fedora64_osboxes)
+    RAW_DATA = '/home/osboxes/host/CloudSynology/rawdata/'
+    SUBJECTS_DIR = '/home/osboxes/subjects/'
+
 
 # PARAMETERS (using paths in WSL format, ie. /mnt/d/....)
 cvs_subj2mni = False
@@ -45,22 +56,26 @@ nburnin = 200
 niters = 7500
 nkeep = 5
 
-
 if __name__ == '__main__':
-    if len(sys.argv)<2:
+    if len(sys.argv) < 2:
         print('Subject ID needs to be specified as the first argument:\n    preprocess_new_patient TEST_SUBJECT01 ')
         sys.exit()
 
     subj = sys.argv[1]
+    verbose = False
+    if len(sys.argv) > 2:
+        verbose = True
 
     try:
-        t1dir = paths.wsl2win(RAW_DATA + os.sep + subj + os.sep + 'T1' + os.sep)
+        t1dir = RAW_DATA + os.sep + subj + os.sep + 'T1' + os.sep
+        if sys.platform == 'win32':
+            t1dir = paths.wsl2win(t1dir)
         t1dcm = os.listdir(t1dir)[0]
         t1file = t1dir + t1dcm
         if not os.path.isfile(t1file):
             raise OSError
         else:
-            if sys.platform =='win32':
+            if sys.platform == 'win32':
                 t1file = paths.win2wsl(t1file)
     except OSError:
         print("ERROR: Subject's T1 folder is empty or does not exist.")
@@ -68,13 +83,15 @@ if __name__ == '__main__':
         sys.exit()
 
     try:
-        t2dir = paths.wsl2win(RAW_DATA + os.sep + subj + os.sep + 'T2' + os.sep)
+        t2dir = RAW_DATA + os.sep + subj + os.sep + 'T2' + os.sep
+        if sys.platform == 'win32':
+            t2dir = paths.wsl2win(t2dir)
         t2dcm = os.listdir(t2dir)[0]
         t2file = t2dir + t2dcm
         if not os.path.isfile(t2file):
             raise OSError
         else:
-            if sys.platform =='win32':
+            if sys.platform == 'win32':
                 t2file = paths.win2wsl(t2file)
     except OSError:
         print("WARNING: Subject's T1 folder is empty or does not exist.")
@@ -86,14 +103,16 @@ if __name__ == '__main__':
             sys.exit()
 
     try:
-        dtidir = paths.wsl2win(RAW_DATA + os.sep + subj + os.sep + 'DTI' + os.sep)
+        dtidir = RAW_DATA + os.sep + subj + os.sep + 'DTI' + os.sep
+        if sys.platform == 'win32':
+            dtidir = paths.wsl2win(dtidir)
         dtidcm = os.listdir(dtidir)[0]
         dtifile = dtidir + dtidcm
         if not os.path.isfile(dtifile):
             raise OSError
         else:
-            if sys.platform =='win32':
-                 dtifile = paths.win2wsl(dtifile)
+            if sys.platform == 'win32':
+                dtifile = paths.win2wsl(dtifile)
     except OSError:
         print("WARNING: Subject's DTI folder is empty or does not exist.")
         choice = input('    -> Do you want to proceed without a DTI scan? [y/n] (default: y) : ')
@@ -104,25 +123,25 @@ if __name__ == '__main__':
             sys.exit()
 
     # RECON
-    # tstart = time.time()
-    # print("\n* Running Freesurfer's recon-all.")
-    # print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    # freesurfer.recon(subj=subj, t1_file=t1file, t2_file=t2file, openmp=openmp)
-    # print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
+    tstart = time.time()
+    print("\n* Running Freesurfer's recon-all.")
+    print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    freesurfer.recon(subj=subj, t1_file=t1file, t2_file=t2file, openmp=openmp, verbose=verbose)
+    print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
 
     # CVS
     if cvs_subj2mni:
         tstart = time.time()
         print("\n* Running subject to template CVS registration.")
         print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        freesurfer.cvs_subj2mni(subj=subj, openmp=openmp)
+        freesurfer.cvs_subj2mni(subj=subj, openmp=openmp, verbose=verbose)
         print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
 
     if cvs_mni2subj:
         tstart = time.time()
         print("\n* Running template to subject CVS registration.")
         print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        freesurfer.cvs_mni2subj(subj=subj, openmp=openmp, subjects_dir=SUBJECTS_DIR)
+        freesurfer.cvs_mni2subj(subj=subj, openmp=openmp, subjects_dir=SUBJECTS_DIR, verbose=verbose)
         print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
 
     # DTI
@@ -154,10 +173,9 @@ if __name__ == '__main__':
         print('\n* Running Tracula.')
         tstart = time.time()
         print('    + Starting Tracula at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        freesurfer.tracula_run(subj=subj, prep=True, bedp=True, path=True, cfg_file=cfg_linux)
+        freesurfer.tracula_run(subj=subj, prep=True, bedp=True, path=True, cfg_file=cfg_linux, verbose=verbose)
         # freesurfer.tracula_run(subj=subj, prep=True, bedp=True, path=True, cfg_file=cfg_linux)
 
         print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
 
         paths.silentremove(cfg)
-
