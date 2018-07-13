@@ -12,7 +12,7 @@ To install PyEpi, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install pyepi
+    $ pip3 install git+git://github.com/cristidonos/pyepi.git@master
 
 This is the preferred method to install PyEpi, as it will always install the most recent stable release.
 
