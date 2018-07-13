@@ -37,7 +37,7 @@ def sendmail(to_address=None, subject=None, message=None, from_address='Pyepi Bo
             dir = str(pathlib.Path.home())
             with open(os.path.join(dir, credentials_file)) as c:
                 lines = c.readlines()
-                smtp = lines[0].strip().replace("'", "").split(sep=':')
+                smtp = lines[0].strip().split(sep=':')
                 username = lines[1].strip()
                 password = lines[2].strip()
                 print('done reading file')
