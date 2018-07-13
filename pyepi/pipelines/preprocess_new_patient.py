@@ -22,14 +22,15 @@ To be called with 2 positional arguments:
     - VERBOSE (optional, if second argument exist verbose=True)
 ex: python3 preprocess_new_patient SEEG77 verbose
 
+Email notifications may be sent when the script finishes
+
 """
 
 from pyepi.interfaces import freesurfer, fsl
 import time
-from pyepi.tools import paths
+from pyepi.tools import paths, notifications
 import os
 import sys
-
 
 if sys.platform == 'win32':
     # Cristi's WSL setup
@@ -40,10 +41,11 @@ if sys.platform == 'linux':
     RAW_DATA = '/home/osboxes/host/CloudSynology/rawdata/'
     SUBJECTS_DIR = '/home/osboxes/subjects/'
 
-
 # PARAMETERS (using paths in WSL format, ie. /mnt/d/....)
 cvs_subj2mni = False
 cvs_mni2subj = False
+send_notification_when_done = True
+send_notifications_to_email = 'cristidonos@yahoo.com'
 
 openmp = 4
 doeddy = 1
@@ -122,38 +124,64 @@ if __name__ == '__main__':
             print('EXECUTION STOPPED.')
             sys.exit()
 
+    email_body = [subj]
+
     # RECON
     tstart = time.time()
-    print("\n* Running Freesurfer's recon-all.")
-    print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    log = "\n* Running Freesurfer's recon-all."
+    print(log)
+    email_body.append(log)
+    log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    print(log)
+    email_body.append(log)
     freesurfer.recon(subj=subj, t1_file=t1file, t2_file=t2file, openmp=openmp, verbose=verbose)
-    print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
+    log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
+    print(log)
+    email_body.append(log)
 
     # CVS
     if cvs_subj2mni:
         tstart = time.time()
-        print("\n* Running subject to template CVS registration.")
-        print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        log = "\n* Running subject to template CVS registration."
+        print(log)
+        email_body.append(log)
+        log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+        email_body.append(log)
         freesurfer.cvs_subj2mni(subj=subj, openmp=openmp, verbose=verbose)
-        print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
+        log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
+        print(log)
+        email_body.append(log)
 
     if cvs_mni2subj:
         tstart = time.time()
-        print("\n* Running template to subject CVS registration.")
-        print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        log = "\n* Running template to subject CVS registration."
+        print(log)
+        email_body.append(log)
+        log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+        email_body.append(log)
         freesurfer.cvs_mni2subj(subj=subj, openmp=openmp, subjects_dir=SUBJECTS_DIR, verbose=verbose)
-        print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
+        log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
+        print(log)
+        email_body.append(log)
 
     # DTI
     if dtifile is not None:
-        print('\n* Converting DTI dicoms to Nifti.')
+        log = '\n* Converting DTI dicoms to Nifti.'
+        print(log)
+        email_body.append(log)
         tstart = time.time()
-        print('    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+        email_body.append(log)
         dwidir = RAW_DATA + '//' + subj + '//DWI'
         freesurfer.dcm2niix(dcm_file=dtifile,
                             output_filename='dwi',
                             output_folder=dwidir)
-        print('    + Finished in ' + str((time.time() - tstart)) + ' seconds.')
+        log = '    + Finished in ' + str((time.time() - tstart)) + ' seconds.'
+        print(log)
+        email_body.append(log)
 
         # tracula config file first
         cfg = freesurfer.tracula_config(subj=subj, dicom=dwidir + '//dwi.nii', config_folder=None,
@@ -170,12 +198,24 @@ if __name__ == '__main__':
             cfg_linux = cfg
 
         # run tracula
-        print('\n* Running Tracula.')
+        log = '\n* Running Tracula.'
+        print(log)
+        email_body.append(log)
         tstart = time.time()
-        print('    + Starting Tracula at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        log = '    + Starting Tracula at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+        email_body.append(log)
         freesurfer.tracula_run(subj=subj, prep=True, bedp=True, path=True, cfg_file=cfg_linux, verbose=verbose)
-        # freesurfer.tracula_run(subj=subj, prep=True, bedp=True, path=True, cfg_file=cfg_linux)
 
-        print('    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
+        log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
+        print(log)
+        email_body.append(log)
 
         paths.silentremove(cfg)
+
+        if send_notification_when_done:
+            try:
+                notifications.sendmail(to_address=send_notifications_to_email, subject='New patient job done.',
+                                       message='\n'.join(email_body))
+            except:
+                pass
