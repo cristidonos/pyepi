@@ -6,6 +6,7 @@ import sys
 import subprocess
 
 from pyepi.tools import paths
+from pyepi.tools import volumes
 import pathlib
 
 
@@ -234,7 +235,6 @@ def tracula_run(subj, prep=True, bedp=True, path=True, cfg_file=None, verbose=0)
         If =1 will print bash command output and errors even if command was successful.
 
     """
-    import subprocess
     commands = []
 
     if prep:
@@ -250,6 +250,72 @@ def tracula_run(subj, prep=True, bedp=True, path=True, cfg_file=None, verbose=0)
     cmd = ' && '.join(commands)
 
     result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if (verbose == 1) or (len(result.stderr) > 0):
+        print('\n\n' + result.stdout.decode('utf-8'))
+        print('\n' + result.stderr.decode('utf-8'))
+
+
+def tesselate(input_volume, threshold, output_surface=None, smooth_surface_iterations=None, normalize=False,
+              normalize_by='max', output_volume=None,
+              verbose=0):
+    """Tesselate mgz/nifti volume to create surface, or output a thresholded volume
+
+    Parameters
+    ----------
+    input_volume: string
+        Path to input mgz/nifti volume (in system's native format)
+    threshold: float
+        Threshold for input volume. Only values higher than threshold will be tesselated / kept.
+    output_surface: string
+        Path to output surface (in system's native format)
+    normalize: bool
+        If True, the input volume will be normalized with the "normalize_by" value before thresholding.
+    normalize_by: float
+        Value to normalize input volume by.
+    output_volume: string
+        Path to output volume (in system's native format)
+    verbose: int
+        If =1 will print bash command output and errors even if command was successful.
+    """
+    commands = []
+    if output_surface is None and output_volume is None:
+        print("\n! Must specify at least an output_surface or an output_volume.\n")
+        return
+    if input_volume is not None:
+        if normalize:
+            normalized_volume_native, normalized_volume_wsl = paths.wsl_tempfile('normalized_volume.mgz')
+            if sys.platform == 'win32':
+                volumes.normalize(input_volume, normalized_volume_native, normalize_by=normalize_by)
+                commands = ['mri_binarize --i ' + normalized_volume_wsl]
+            else:
+                volumes.normalize(input_volume, normalized_volume_native, normalize_by=normalize_by)
+                commands = ['mri_binarize --i ' + normalized_volume_native]
+        else:
+            commands = ['mri_binarize --i ' + input_volume]
+    else:
+        print("\n! Must specify an input volume to tesselate.\n")
+        return
+    if threshold is not None:
+        commands.append('--min ' + str(threshold))
+    else:
+        print("\n! Must specify a threshold to tesselate.\n")
+        return
+    if output_volume is not None:
+        if sys.platform == 'win32':
+            commands.append('--o ' + paths.win2wsl(output_volume))
+        else:
+            commands.append('--o ' + output_volume)
+    if output_surface is not None:
+        if sys.platform == 'win32':
+            commands.append('--surf ' + paths.win2wsl(output_surface))
+        else:
+            commands.append('--surf ' + output_surface)
+        if smooth_surface_iterations is not None:
+            commands.append('--surf-smooth ' + str(smooth_surface_iterations))
+
+    cmd = ' '.join(commands)
+    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    paths.silentremove(normalized_volume_native)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
@@ -277,7 +343,7 @@ def dcm2niix(dcm_file, output_filename, output_folder, executable_path='', verbo
     paths.silentremove(output_folder + output_filename + '.bvec')
     paths.silentremove(output_folder + output_filename + '.bval')
     paths.silentremove(output_folder + output_filename + '.json')
-    if (':' not in output_folder) and sys.platform=='win32':
+    if (':' not in output_folder) and sys.platform == 'win32':
         os.makedirs(paths.wsl2win(output_folder), exist_ok=True)
     else:
         os.makedirs(output_folder, exist_ok=True)  # try, see if it works...id Windows Linux Subsytem is use it won't

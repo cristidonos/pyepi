@@ -3,8 +3,8 @@
 1. Freesurfer's recon
 2. Coordinate conversion to Freesurfer's space using .ppr and "Patient Data.xlsx"
 3. Freesurfer's Tracula
-4  FSL's probabilistic tractography with SEEG contacts as seeds.
-
+4. FSL's probabilistic tractography with SEEG contacts as seeds.
+5. Tesselation of probabilistic distribution of fibers.
 
 The RAW_DATA folder needs to be defined and have the following structure:
 
@@ -24,6 +24,8 @@ To be called with 1 positional arguments:
 And optional additional arguments to enable/disable various preprocessing steps:
     - recon / norecon (optional, if second argument exist verbose=True)
     - tracula / notracula
+    - probtrack / noprobtrack
+    - tessprobtrack / notessprobtrack
     - cvs_subj2mni
     - cvs_mni2subj
     - verbose (print output)
@@ -43,12 +45,13 @@ import sys
 import numpy as np
 import pandas as pd
 import subprocess
+import glob
 
 if sys.platform == 'win32':
     # Cristi's WSL setup
     RAW_DATA = r'/mnt/d/CloudSynology/rawdata/'
     SUBJECTS_DIR = r'/mnt/d/CloudSynology/subjects/'  # as seen in WSL
-    SUBJECTS_DIR_NATIVE = r'D:\\CloudSynology\\subjects\\'  # in native OS
+    SUBJECTS_DIR_NATIVE = r'd:\\CloudSynology\\subjects\\'  # in native OS
 if sys.platform == 'linux':
     # Cristi's Virtual Box setup (fedora64_osboxes)
     RAW_DATA = r'/home/osboxes/host/CloudSynology/rawdata/'
@@ -61,9 +64,11 @@ tracula = True
 cvs_subj2mni = False
 cvs_mni2subj = False
 probtrack = True
+tessprobtrack = True
 send_notification_when_done = True
 send_notifications_to_email = 'cristidonos@yahoo.com'
 
+# tracula
 openmp = 4
 doeddy = 1
 dorotbvecs = 1
@@ -74,6 +79,18 @@ nstick = 2
 nburnin = 200
 niters = 7500
 nkeep = 5
+
+# probtrack with seed coords
+curvature_thr = 0.2
+nsamples = 5000
+nsteps = 2000
+step_length = 0.5
+fib_thr = 0.01
+dist_thr = 0.0
+sampling_radius = 2
+
+# tesselation
+tess_probtrack_threshold = 0.05  # minimum probtrack probability for tesselation
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -102,6 +119,10 @@ if __name__ == '__main__':
         probtrack = True
     if 'noprobtrack' in sys.argv:
         probtrack = False
+    if 'tessprobtrack' in sys.argv:
+        tessprobtrack = True
+    if 'notessprobtrack' in sys.argv:
+        tessprobtrack = False
 
     try:
         t1dir = RAW_DATA + os.sep + subj + os.sep + 'T1' + os.sep
@@ -322,14 +343,27 @@ if __name__ == '__main__':
                                           waycond='AND',
                                           loopcheck=True,
                                           onewaycondition=True,
-                                          curvature_thr=0.2,
-                                          nsamples=5000,
-                                          nsteps=2000,
-                                          step_length=0.5,
-                                          fib_thr=0.01,
-                                          dist_thr=0.0,
-                                          sampling_radius=2)
+                                          curvature_thr=curvature_thr,
+                                          nsamples=nsamples,
+                                          nsteps=nsteps,
+                                          step_length=step_length,
+                                          fib_thr=fib_thr,
+                                          dist_thr=dist_thr,
+                                          sampling_radius=sampling_radius)
             paths.silentremove(native_file)
+            if tessprobtrack:
+                input_volume = glob.glob(
+                    SUBJECTS_DIR_NATIVE + subj + os.sep + 'probtrac_contacts' + os.sep + c.replace("'",
+                                                                                                   "+") + '*.nii.gz')
+                if len(input_volume) != 1:
+                    print('ERROR: are there multiple probtrack files with the same contact name?!')
+                    print('EXECUTION STOPPED.')
+                    sys.exit()
+                else:
+                    input_volume = input_volume[0]
+                output_surface = input_volume.replace('.nii.gz', '.surf')
+                freesurfer.tesselate(input_volume, tess_probtrack_threshold, output_volume=None, normalize=True,
+                                     normalize_by=nsamples, output_surface=output_surface, smooth_surface_iterations=5)
         log = '    + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.'
         print(log)
         email_body.append(log)

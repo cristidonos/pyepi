@@ -43,7 +43,8 @@ def sendmail(to_address=None, subject=None, message=None, from_address='Pyepi Bo
                 print('done reading file')
         except:
             # unspecified SMTP and credentials
-            print('crashed')
+            print('\n\n')
+            print(''' --> Email notification not sent, likely due to missing credentials file.''')
             return 0
 
     msg = MIMEText(message)
