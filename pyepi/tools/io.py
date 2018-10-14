@@ -8,6 +8,7 @@ TODO: ppr
 import numpy as np
 import pandas as pd
 import os
+from scipy.stats import spearmanr
 
 
 def read_ppr(filename):
@@ -161,3 +162,53 @@ def read_afni_shift(filename):
     xfm = np.append(xfm, [0, 0, 0, 1])
     xfm = xfm.reshape((4, 4))
     return xfm
+
+
+def load_spes(filename, sheetname=None):
+    """
+    Loads SPES responses from a file.
+
+    File is an Excel file with a Sheet named after subject's full name or patient ID, which has 32 columns.
+    First 12 columns are:
+        Patient;	Protocol;	StimContact;	RespContact;	LowFreq;	HighFreq;	RmsWindow;
+        RmsWindowStart;	DR;	HFO;    Effect3;	Effect4.
+    Next 20 columns represent the single pulse evoked responses, sorted by current amplitudes (0.25mA to 5 mA).
+
+    See: C Donos, I Mîndruţă, J Ciurea, MD Mălîia, A Barborica. A comparative study of the effects of pulse parameters
+    for intracranial direct electrical stimulation in epilepsy. Clinical Neurophysiology 127 (1), 91-101
+
+    Parameters
+    ----------
+    filename: string
+        Path to file containing contacts coordinates.
+    sheetname: string
+        Name of Excel sheet containing the SPES data
+    Returns
+    -------
+    spes: Pandas dataframe
+        Dataframe with Spearman correlations and mean rms responses.
+    sheetname : string
+        Name of Excel sheet containig the SPES data
+
+    """
+    spes_currents = np.arange(0.25, 5.25, 0.25)
+    if sheetname is None:
+        xl = pd.ExcelFile(filename)
+        sheetname = [s for s in xl.sheet_names if 'Sheet' not in s][0]
+    spes_raw = pd.read_excel(filename, sheet_name=sheetname)
+    spes = spes_raw
+    spes_resp_cols = [c for c in spes.columns if 'Unnamed' in c]
+    spearman_func = lambda x: spearmanr(spes_currents, x[spes_resp_cols])
+    mean_func = lambda x: np.mean(x[spes_resp_cols])
+    # filename = 'D:\Cloud\SPES\Vidican Luca Emanuel.xls'
+
+    spes = pd.concat([spes,
+                      pd.DataFrame(list(spes.apply(spearman_func, axis=1))),
+                      pd.DataFrame(spes.apply(mean_func, axis=1), columns=['mean_rms']),
+                      ]
+                     , axis=1)
+    spes = spes.drop(columns=spes_resp_cols, axis=1)
+
+    return spes, sheetname
+
+

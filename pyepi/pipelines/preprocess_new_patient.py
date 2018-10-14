@@ -38,14 +38,19 @@ Email notifications may be sent when the script finishes
 
 from pyepi.interfaces import freesurfer, fsl
 import time
-from pyepi.tools import paths, notifications
-from pyepi.tools import io
+from pyepi.tools import paths, notifications, volumes, io
 import os
 import sys
 import numpy as np
 import pandas as pd
+import nibabel as nib
 import subprocess
 import glob
+import psutil
+import tqdm
+import deco
+import time
+import random
 
 if sys.platform == 'win32':
     # Cristi's WSL setup
@@ -58,18 +63,23 @@ if sys.platform == 'linux':
     SUBJECTS_DIR = r'/home/osboxes/subjects/'
     SUBJECTS_DIR_NATIVE = r'/home/osboxes/subjects/'  # in native OS
 
+MAX_RAM_SIZE = psutil.virtual_memory()[0] / 2. ** 30  # in GB
+CPU_COUNT = psutil.cpu_count()
+
 # PARAMETERS (using paths in WSL format, ie. /mnt/d/....)
 recon = True
 tracula = True
-cvs_subj2mni = False
-cvs_mni2subj = False
+cvs_subj2mni = True
+cvs_mni2subj = True
+save_contact_coordinates = True
 probtrack = True
 tessprobtrack = True
+morphprobtrack = True
 send_notification_when_done = True
 send_notifications_to_email = 'cristidonos@yahoo.com'
 
 # tracula
-openmp = 4
+openmp = max(1, CPU_COUNT - 2)  # leave two cores free for other processes
 doeddy = 1
 dorotbvecs = 1
 doregbbr = 1
@@ -91,6 +101,41 @@ sampling_radius = 2
 
 # tesselation
 tess_probtrack_threshold = 0.05  # minimum probtrack probability for tesselation
+smooth_surface_iterations = 5
+
+
+# HELP FUNCTIONS FOR PARALLEL PROCESSING
+@deco.concurrent(processes=int(min(MAX_RAM_SIZE // 8, CPU_COUNT)))
+def par_cvs_apply_morph(subj=None, volume=None, output_dir=None,
+                        verbose=None):
+    current_file = output_dir + os.path.basename(volume).replace('nii.gz', 'mgz')
+    if sys.platform == 'win32':
+        keep_going = not os.path.isfile(paths.wsl2win(current_file))
+        # bash processes may end up "suspended" on WSL. Check and kill such processes
+        for pid in psutil.process_iter():
+            if (pid.name() == 'bash') and (pid.status() == 'stopped'):
+                pid.kill()
+    else:
+        keep_going = not os.path.isfile(current_file)
+    if keep_going:
+        time.sleep(1 + random.random() * 5)
+        freesurfer.cvs_apply_morph(subj=subj, subjects_dir=SUBJECTS_DIR,
+                                   volume=volume,
+                                   output_volume=os.path.basename(volume).replace('nii.gz', 'mgz'),
+                                   output_dir=output_dir,
+                                   interpolation='linear',
+                                   verbose=verbose)
+        time.sleep(1 + random.random() * 5)
+
+
+@deco.synchronized
+def run_cvs_apply_morph(probtrac_files, probtrac_cvs_dir):
+    for volume in probtrac_files:
+        par_cvs_apply_morph(subj=subj,
+                            volume=volume,
+                            output_dir=probtrac_cvs_dir,
+                            verbose=verbose)
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -115,6 +160,10 @@ if __name__ == '__main__':
         cvs_subj2mni = True
     if 'cvs_mni2subj' in sys.argv:
         cvs_mni2subj = True
+    if 'nocvs_subj2mni' in sys.argv:
+        cvs_subj2mni = False
+    if 'nocvs_mni2subj' in sys.argv:
+        cvs_mni2subj = False
     if 'probtrack' in sys.argv:
         probtrack = True
     if 'noprobtrack' in sys.argv:
@@ -123,6 +172,9 @@ if __name__ == '__main__':
         tessprobtrack = True
     if 'notessprobtrack' in sys.argv:
         tessprobtrack = False
+
+    print('\nNumber of CPUs: ' + str(CPU_COUNT) + '.')
+    print('RAM: ' + str(MAX_RAM_SIZE) + ' Gb.\n')
 
     try:
         t1dir = RAW_DATA + os.sep + subj + os.sep + 'T1' + os.sep
@@ -196,6 +248,7 @@ if __name__ == '__main__':
             patientdatafile = None
             pprfile = None
             probtrack = False
+            save_contact_coordinates = False
         else:
             print('EXECUTION STOPPED.')
             sys.exit()
@@ -215,6 +268,31 @@ if __name__ == '__main__':
         log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
         print(log)
         email_body.append(log)
+
+    # save contact coordinates in Freesurfer's space
+    if save_contact_coordinates:
+        ppr_scans, ppr_anat, ppr_trajectories = io.read_ppr(pprfile)
+        coords, landmarks, mri_uid = io.load_contacts(patientdatafile)
+        coords['dummy'] = np.ones_like(coords.loc[:, 'x'])
+        landmarks['dummy'] = np.ones_like(landmarks.loc[:, 'x'])
+        # mri index in ppr
+        scan = [k for k in ppr_scans.values() if k['uid'] == mri_uid][0]
+        xfm_ppr = scan['xfm']
+        fscoords = np.array(coords.loc[:, ['x', 'y', 'z', 'dummy']]).dot(scan['wt'].T).dot(np.diag([-1, -1, 1, 1]))
+
+        mri_norm = nib.load(SUBJECTS_DIR_NATIVE + subj + os.sep + 'mri' + os.sep + 'norm.mgz')
+        vox_fscoords = np.dot(np.linalg.inv(mri_norm.get_header().get_vox2ras_tkr()), fscoords.T).T
+
+        all_coords = pd.concat([coords,
+                                pd.DataFrame(fscoords, columns=['xmri', 'ymri', 'zmri', 'dummymri']),
+                                pd.DataFrame(vox_fscoords, columns=['xmrivox', 'ymrivox', 'zmrivox', 'dummymrivox']),
+                                ], axis=1)
+        all_coords = all_coords.drop(columns=all_coords.columns[['dummy' in c for c in all_coords.columns]])
+        all_coords = volumes.identify_voxel_location(all_coords,
+                                                     SUBJECTS_DIR_NATIVE + subj + os.sep + 'mri' + os.sep + 'aparc+aseg.mgz',
+                                                     os.path.dirname(
+                                                         freesurfer.__file__) + os.sep + 'FreesurferLUT.xlsx')
+        all_coords.to_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
 
     # CVS
     if cvs_subj2mni:
@@ -301,28 +379,17 @@ if __name__ == '__main__':
         tstart = time.time()
         log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         print(log)
+        print('           ', end=' ')
         email_body.append(log)
-
-        ppr_scans, ppr_anat, ppr_trajectories = io.read_ppr(pprfile)
-        coords, landmarks, mri_uid = io.load_contacts(patientdatafile)
-        coords['dummy'] = np.ones_like(coords.loc[:, 'x'])
-        landmarks['dummy'] = np.ones_like(landmarks.loc[:, 'x'])
-        # mri index in ppr
-        scan = [k for k in ppr_scans.values() if k['uid'] == mri_uid][0]
-        xfm_ppr = scan['xfm']
-        fscoords = np.array(coords.loc[:, ['x', 'y', 'z', 'dummy']]).dot(scan['wt'].T).dot(np.diag([-1, -1, 1, 1]))
-        all_coords = pd.concat([coords,
-                                pd.DataFrame(fscoords, columns=['xmri', 'ymri', 'zmri', 'dummymri']),
-                                ], axis=1)
-        all_coords = all_coords.drop(columns=all_coords.columns[['dummy' in c for c in all_coords.columns]])
-        all_coords.to_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
+        all_coords = pd.read_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
         r = subprocess.run(
             ['bash', '-i', '-c', 'mri_info --ras2vox-tkr ' + SUBJECTS_DIR + subj + '/dmri/brain_anat.nii.gz'],
             stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         ras2vox = r.stdout.decode('utf-8').split('\n')[-5:-1]
         ras2vox = np.array([line.split() for line in ras2vox], dtype=np.float)
         contacts = [c for c in all_coords['name'].values]
-        for c in contacts:
+        probtrac_files = []
+        for c in tqdm.tqdm(contacts, ncols=60):
             native_file, wsl_file = paths.wsl_tempfile('seedmask.txt')
             coords = all_coords[all_coords['name'] == c][['xmri', 'ymri', 'zmri']].values
             coords_str = ' '.join([str(s) for s in ras2vox.dot(np.append(coords, 1))[0:3]])
@@ -351,19 +418,77 @@ if __name__ == '__main__':
                                           dist_thr=dist_thr,
                                           sampling_radius=sampling_radius)
             paths.silentremove(native_file)
+            # get the probabilistic tractography filename
+            input_volume = glob.glob(
+                SUBJECTS_DIR_NATIVE + subj + os.sep + 'probtrac_contacts' + os.sep + c.replace("'",
+                                                                                               "+") + '*.nii.gz')
+            if len(input_volume) != 1:
+                print('ERROR: are there multiple probtrack files with the same contact name?!')
+                print('EXECUTION STOPPED.')
+                sys.exit()
+            else:
+                input_volume = input_volume[0]
+                probtrac_files.append(input_volume)
             if tessprobtrack:
-                input_volume = glob.glob(
-                    SUBJECTS_DIR_NATIVE + subj + os.sep + 'probtrac_contacts' + os.sep + c.replace("'",
-                                                                                                   "+") + '*.nii.gz')
-                if len(input_volume) != 1:
-                    print('ERROR: are there multiple probtrack files with the same contact name?!')
-                    print('EXECUTION STOPPED.')
-                    sys.exit()
-                else:
-                    input_volume = input_volume[0]
                 output_surface = input_volume.replace('.nii.gz', '.surf')
                 freesurfer.tesselate(input_volume, tess_probtrack_threshold, output_volume=None, normalize=True,
-                                     normalize_by=nsamples, output_surface=output_surface, smooth_surface_iterations=5)
+                                     normalize_by=nsamples, output_surface=output_surface,
+                                     smooth_surface_iterations=smooth_surface_iterations)
+        log = '    + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.'
+        print(log)
+        email_body.append(log)
+
+    if morphprobtrack:
+        log = '\n* Morphing probabilistic tractography to CVS template.'
+        print(log)
+        email_body.append(log)
+        tstart = time.time()
+        log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+
+        email_body.append(log)
+        probtrac_cvs_dir_native = SUBJECTS_DIR_NATIVE + subj + os.sep + 'probtrac_contacts_cvs_avg35' + os.sep
+        probtrac_cvs_dir = SUBJECTS_DIR + subj + '/probtrac_contacts_cvs_avg35/'
+        os.makedirs(probtrac_cvs_dir_native, exist_ok=True)
+        #        Get file names from folder
+        probtrac_files = [f for f in glob.glob(
+            SUBJECTS_DIR_NATIVE + subj + os.sep + 'probtrac_contacts' + os.sep + '*.nii.gz')]
+
+        if sys.platform == 'win32':
+            probtrac_files = [paths.win2wsl(pf) for pf in probtrac_files]
+
+        # don't know why, but sometimes bash process appears suspended in Windows when running multiple instances
+        # rerun cvs_apply_morph until all files have been processed
+        need_to_rerun = True
+        while need_to_rerun:
+            probtrac_files_in_cvs = [f for f in glob.glob(
+                SUBJECTS_DIR_NATIVE + subj + os.sep + 'probtrac_contacts_cvs_avg35' + os.sep + '*.mgz')]
+            files_left = [x for x in [os.path.basename(p) for p in [pf.replace('.nii.gz', '') for pf in probtrac_files]]
+                          if
+                          x not in [os.path.basename(pc) for pc in
+                                    [pfc.replace('.mgz', '') for pfc in probtrac_files_in_cvs]]]
+            new_probtrac_files = []
+            for f in files_left:
+                new_probtrac_files.extend([p for p in probtrac_files if f in p])
+            probtrac_files = new_probtrac_files
+            if len(probtrac_files) > 0:
+                run_cvs_apply_morph(probtrac_files, probtrac_cvs_dir)
+            else:
+                need_to_rerun = False
+
+        # print('\n           ', end=' ')
+        # for pf in tqdm.tqdm(probtrac_files, ncols=60):
+        #     if sys.platform == 'win32':
+        #         volume = paths.win2wsl(pf)
+        #     else:
+        #         volume = pf
+        #     freesurfer.cvs_apply_morph(subj=subj, subjects_dir=SUBJECTS_DIR,
+        #                                volume=volume,
+        #                                output_volume=os.path.basename(volume).replace('nii.gz', 'mgz'),
+        #                                output_dir=probtrac_cvs_dir,
+        #                                interpolation='linear',
+        #                                verbose=verbose)
+
         log = '    + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.'
         print(log)
         email_body.append(log)

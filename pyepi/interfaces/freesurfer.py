@@ -128,6 +128,48 @@ def cvs_mni2subj(subj=None, subjects_dir=None, openmp=None, verbose=0):
         print('\n' + result.stderr.decode('utf-8'))
 
 
+def cvs_apply_morph(subj, subjects_dir, volume, output_volume, output_dir, morph_to_cvs=True, interpolation='linear',
+                    verbose=0):
+    """ Apply CVS morph to a given volume
+
+    subj: string
+        subject id
+    subjects_dir: string
+        Freesurfer's subjects dir
+    volume: string
+        Volume to be morphed
+    output_volume: string
+        Output volume name (ex: test.mgz)
+    output_dir: string
+        Path to output_volume
+    morph_to_cvs: bool
+        If True, will morph volume to CVS template, if False will morph volume from CVS template space to subj's space
+    interpolation: string
+        Morph interpolation type. Use 'linear' for continous intensity distributions and 'nearest' for atlas-like volumes (ex: aseg)
+    verbose: int
+        If =1 will print bash command output and errors even if command was successful.
+
+    """
+    if morph_to_cvs:
+        cmd = ('applyMorph --template ' +
+               subjects_dir + 'cvs_avg35_inMNI152/mri/norm.mgz' +
+               ' --transform ' + subjects_dir + subj +
+               '/cvs/el_reg_tocvs_avg35_inMNI152.tm3d  vol ' +
+               volume + ' ' +
+               output_dir + output_volume + ' ' + interpolation)
+    else:
+        cmd = ('applyMorph --template ' +
+               subjects_dir + subj + '/mri/norm.mgz' +
+               ' --transform ' + subjects_dir + subj +
+               '/cvs_avg35_inMNI135_to_subj/el_reg_to' + subj + '.tm3d  vol ' +
+               volume + ' ' +
+               output_dir + output_volume + ' ' + interpolation)
+    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if (verbose == 1) or (len(result.stderr) > 0):
+        print('\n\n' + result.stdout.decode('utf-8'))
+        print('\n' + result.stderr.decode('utf-8'))
+
+
 def tracula_config(subj, dicom, config_folder=None, subjects_dir=None, dtroot=None, bvecfile=None, bvalfile=None,
                    doeddy=True, dorotbvecs=True, doregbbr=True, doregmni=True, doregcvs=False, nstick=2, nburnin=200,
                    nsample=7500, nkeep=5):
@@ -361,9 +403,4 @@ def dcm2niix(dcm_file, output_filename, output_folder, executable_path='', verbo
         print('\n' + result.args)
 
 
-''' 
-TODO: convert (33,-7,41) in mm to voxels in the same image:  
-echo 33 -7 41 | std2imgcoord  -img brain_anat_orig.nii.gz -std brain_anat_orig.nii.gz -vox
 
-- use this for computing prob tractography around contact coordinates, see D:\CloudSynology\subjects\SEEG72\probtrackx2\
-'''
