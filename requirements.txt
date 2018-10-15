@@ -34,7 +34,7 @@ pyface==6.0.0
 Pygments==2.2.0
 pyparsing==2.2.0
 pyreadline==2.1
-pysurfer==0.9.dev0
+git+git://github.com/cristidonos/pysurfer@master
 pytest==3.7.3
 pytest-runner==4.2
 python-dateutil==2.7.3
