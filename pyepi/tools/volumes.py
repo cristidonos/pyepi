@@ -54,8 +54,8 @@ def identify_voxel_location(coords, atlas_volume, lut_table):
     atlas = nib.load(atlas_volume).get_data()
     lut = pd.read_excel(lut_table)
 
-    wm_and_unknown = lut[lut['Name'].str.contains('Unknown')]['No'].values
-    wm_and_unknown = np.append(wm_and_unknown, lut[lut['Name'].str.contains('Matter')]['No'].values)
+    wm_and_unknown = lut[lut['Name'].str.contains('Unknown', case=False)]['No'].values
+    wm_and_unknown = np.append(wm_and_unknown, lut[lut['Name'].str.contains('Matter', case=False)]['No'].values)
 
     center_voxel = []
     most_likely = []
@@ -116,4 +116,48 @@ def identify_voxel_location(coords, atlas_volume, lut_table):
                         pd.DataFrame(center_voxel, columns=['exact']),
                         pd.DataFrame(most_likely, columns=['most_likely']),
                         ], axis=1)
+    return coords
+
+
+def average_structure_coordinates(atlas_volume, lut_table):
+    """ Computes the mean voxel coordinates of each brain structure in atlas_volume.
+
+    atlas_volume: string
+        Path to atlas segmentation volume (Freesurfer style, ex: aparg+aseg.mgz)
+    lut_table: string
+        Path to LUT table (Freesurfer Style) in xlsx format
+
+    Returns:
+
+    coords: Pandas dataframe
+        X, Y, Z coordinates for each brain structure in scan and voxel coordinates
+
+    """
+
+    atlas_vol = nib.load(atlas_volume)
+    atlas = atlas_vol.get_data()
+    vox2ras = atlas_vol.header.get_vox2ras_tkr()
+    lut = pd.read_excel(lut_table)
+
+    wm_and_unknown = lut[lut['Name'].str.contains('Unknown', case=False)]['No'].values
+    wm_and_unknown = set(np.append(wm_and_unknown, lut[lut['Name'].str.contains('Matter', case=False)]['No'].values))
+
+    coords = pd.DataFrame(columns=['name', 'hemi', 'xmri', 'ymri', 'zmri', 'xmrivox', 'ymrivox', 'zmrivox'])
+    labels = set(np.unique(atlas)) - wm_and_unknown
+    for label in labels:
+        xmrivox, ymrivox, zmrivox = np.round(np.mean(np.stack(np.where(atlas == label)).T, axis=0)).astype(np.int)
+        xmri, ymri, zmri, _ = np.dot(vox2ras, np.array([xmrivox, ymrivox, zmrivox, 1]))
+        name = lut[lut['No'] == label]['Name'].values[0]
+        hemi = ''
+        if any(x in name for x in ['-rh-', 'Right']):
+            hemi = 'R'
+        if any(x in name for x in ['-lh-', 'Left']):
+            hemi = 'L'
+        data = {'name': [name], 'hemi': [hemi], 'xmri': [xmri], 'ymri': [ymri], 'zmri': [zmri], 'xmrivox': [xmrivox],
+                'ymrivox': [ymrivox], 'zmrivox': [zmrivox]}
+        coords = pd.concat([coords,
+                            pd.DataFrame(data=data),
+                            ], axis=0)
+    coords = coords.sort_values(by=['hemi', 'name']).reset_index(drop=True)
+
     return coords

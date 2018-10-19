@@ -271,6 +271,13 @@ if __name__ == '__main__':
 
     # save contact coordinates in Freesurfer's space
     if save_contact_coordinates:
+        tstart = time.time()
+        log = "\n* Processing contacts coordinates."
+        print(log)
+        email_body.append(log)
+        log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+        email_body.append(log)
         ppr_scans, ppr_anat, ppr_trajectories = io.read_ppr(pprfile)
         coords, landmarks, mri_uid = io.load_contacts(patientdatafile)
         coords['dummy'] = np.ones_like(coords.loc[:, 'x'])
@@ -293,6 +300,14 @@ if __name__ == '__main__':
                                                      os.path.dirname(
                                                          freesurfer.__file__) + os.sep + 'FreesurferLUT.xlsx')
         all_coords.to_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
+
+        average_struct_coords = volumes.average_structure_coordinates(
+            SUBJECTS_DIR_NATIVE + subj + os.sep + 'mri' + os.sep + 'aparc+aseg.mgz', os.path.dirname(
+                freesurfer.__file__) + os.sep + 'FreesurferLUT.xlsx')
+        average_struct_coords.to_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'Average_structure_coordinates.xlsx')
+        log = '    + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.'
+        print(log)
+        email_body.append(log)
 
     # CVS
     if cvs_subj2mni:
