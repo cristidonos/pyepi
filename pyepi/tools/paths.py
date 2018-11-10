@@ -44,7 +44,7 @@ def set_paths(platform=PLATFORM):
     if platform == 'EPIFFB-SERVER':
         # Unibuc , Physics Dept. WSL setup
         RAW_DATA = r'/mnt/d/CloudEpi/SEEGRaw/'
-        RAW_DATA_NATIVE = r'd:\\CloudSEpi\\SEEGRaw\\'
+        RAW_DATA_NATIVE = r'd:\\CloudEpi\\SEEGRaw\\'
         SUBJECTS_DIR = r'/mnt/d/CloudEpi/Subjects/'  # as seen in WSL
         SUBJECTS_DIR_NATIVE = r'd:\\CloudEpi\Subjects\\'  # in native OS
 
