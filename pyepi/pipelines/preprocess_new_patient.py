@@ -37,8 +37,8 @@ Email notifications may be sent when the script finishes
 """
 
 from pyepi.interfaces import freesurfer, fsl
-import time
-from pyepi.tools import paths, notifications, volumes, io
+import platform
+from pyepi.tools import paths, notifications, volumes, inout
 import os
 import sys
 import numpy as np
@@ -47,21 +47,11 @@ import nibabel as nib
 import subprocess
 import glob
 import psutil
-import tqdm
 import deco
 import time
 import random
 
-if sys.platform == 'win32':
-    # Cristi's WSL setup
-    RAW_DATA = r'/mnt/d/CloudSynology/rawdata/'
-    SUBJECTS_DIR = r'/mnt/d/CloudSynology/subjects/'  # as seen in WSL
-    SUBJECTS_DIR_NATIVE = r'd:\\CloudSynology\\subjects\\'  # in native OS
-if sys.platform == 'linux':
-    # Cristi's Virtual Box setup (fedora64_osboxes)
-    RAW_DATA = r'/home/osboxes/host/CloudSynology/rawdata/'
-    SUBJECTS_DIR = r'/home/osboxes/subjects/'
-    SUBJECTS_DIR_NATIVE = r'/home/osboxes/subjects/'  # in native OS
+RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(platform=platform.node())
 
 MAX_RAM_SIZE = psutil.virtual_memory()[0] / 2. ** 30  # in GB
 CPU_COUNT = psutil.cpu_count()
@@ -172,6 +162,10 @@ if __name__ == '__main__':
         tessprobtrack = True
     if 'notessprobtrack' in sys.argv:
         tessprobtrack = False
+    if 'morphprobtrack' in sys.argv:
+        morphprobtrack = True
+    if 'nomorphprobtrack' in sys.argv:
+        morphprobtrack = False
 
     print('\nNumber of CPUs: ' + str(CPU_COUNT) + '.')
     print('RAM: ' + str(MAX_RAM_SIZE) + ' Gb.\n')
@@ -278,8 +272,8 @@ if __name__ == '__main__':
         log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         print(log)
         email_body.append(log)
-        ppr_scans, ppr_anat, ppr_trajectories = io.read_ppr(pprfile)
-        coords, landmarks, mri_uid = io.load_contacts(patientdatafile)
+        ppr_scans, ppr_anat, ppr_trajectories = inout.read_ppr(pprfile)
+        coords, landmarks, mri_uid = inout.load_contacts(patientdatafile)
         coords['dummy'] = np.ones_like(coords.loc[:, 'x'])
         landmarks['dummy'] = np.ones_like(landmarks.loc[:, 'x'])
         # mri index in ppr
@@ -394,7 +388,6 @@ if __name__ == '__main__':
         tstart = time.time()
         log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         print(log)
-        print('           ', end=' ')
         email_body.append(log)
         all_coords = pd.read_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
         r = subprocess.run(
@@ -404,7 +397,7 @@ if __name__ == '__main__':
         ras2vox = np.array([line.split() for line in ras2vox], dtype=np.float)
         contacts = [c for c in all_coords['name'].values]
         probtrac_files = []
-        for c in tqdm.tqdm(contacts, ncols=60):
+        for c in contacts:
             native_file, wsl_file = paths.wsl_tempfile('seedmask.txt')
             coords = all_coords[all_coords['name'] == c][['xmri', 'ymri', 'zmri']].values
             coords_str = ' '.join([str(s) for s in ras2vox.dot(np.append(coords, 1))[0:3]])
@@ -449,7 +442,7 @@ if __name__ == '__main__':
                 freesurfer.tesselate(input_volume, tess_probtrack_threshold, output_volume=None, normalize=True,
                                      normalize_by=nsamples, output_surface=output_surface,
                                      smooth_surface_iterations=smooth_surface_iterations)
-        log = '    + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.'
+        log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
         print(log)
         email_body.append(log)
 
@@ -504,7 +497,7 @@ if __name__ == '__main__':
         #                                interpolation='linear',
         #                                verbose=verbose)
 
-        log = '    + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.'
+        log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
         print(log)
         email_body.append(log)
 

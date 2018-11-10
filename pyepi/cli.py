@@ -7,8 +7,19 @@ import sys
 from .interfaces import freesurfer
 from .interfaces import fsl
 from .tools import paths
+from . import pipelines
 import tempfile
 import os
+import ast
+import subprocess
+
+class PythonLiteralOption(click.Option):
+
+    def type_cast_value(self, ctx, value):
+        try:
+            return ast.literal_eval(value)
+        except:
+            raise click.BadParameter(value)
 
 
 @click.command()
@@ -282,6 +293,68 @@ def trac(job, **kwargs):
                                     sampling_radius=kwargs['sampling_radius'],
                                     verbose=kwargs['verbose'])
         print(' + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.')
+
+    return 0
+
+
+@click.command()
+@click.argument('pipe')
+@click.argument('subject')
+@click.option('--recon/--no-recon', default=True, help='run recon')
+# @click.option('--norecon', default=None, help='skip recon')
+@click.option('--tracula/--no-tracula', default=True, help='run tracula')
+# @click.option('--notracula', default=None, help='skip tracula')
+@click.option('--cvs_subj2mni/--no-cvs_subj2mni', default=True, help='run subj to MNI CVS registration')
+# @click.option('--nocvs_subj2mni', default=None, help='skip subj to MNI CVS registration')
+# @click.option('--cvs_mni2subj', default=None, help='run MNI to subj CVS registration')
+# @click.option('--nocvs_mni2subj', default=None, help='skip MNI to subj CVS registration')
+# @click.option('--probtrack', default=None, help='run probabilistic tractography with contacts as seeds')
+# @click.option('--noprobtrack', default=None, help='skip probabilistic tractography with contacts as seeds')
+# @click.option('--tessprobtrack', default=None, help='tesselate probabilistic tractography')
+# @click.option('--notessprobtrack', default=None, help="don't tesselate probabilistic tractography")
+# @click.option('--morphprobtrack', default=None, help='morph probabilistic tractography to MNI')
+# @click.option('--nomorphprobtrack', default=None, help="don't morph probabilistic tractography to MNI")
+def pipeline(pipe, subject, **kwargs):
+    """ UNIBUC pipelines
+
+    \b
+    Assumes the following files are *always* updated with correct paths:
+        pyepi.pipelines.preprocess_new_patient.py
+        pyepi.pipelines.generate_report.py
+
+
+    \b
+    PIPE can be:
+         'newpatient' -- fully preprocess new patient with recon, tracula, tractography, CVS, etc
+         'report'     -- generate Jupyter Notebook and HTML report with implantation scheme and SPES connectivity
+
+
+    """
+    tstart = time.time()
+    print(' + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    pipelines_dir = os.path.dirname(pipelines.__file__)
+
+    if pipe == 'newpatient':
+        params = []
+        [params.append(k) for k in kwargs.keys() if kwargs[k]]
+        [params.append('no' + k) for k in kwargs.keys() if not kwargs[k]]
+        run_list = ['python', os.path.join(pipelines_dir,'preprocess_new_patient.py'), subject ] + params
+        p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        for line in iter(p.stdout.readline, b''):
+            print(line.decode(encoding='utf-8').replace('\r','').replace('\n',''))
+        p.stdout.close()
+        p.wait()
+
+    if pipe == 'report':
+        run_list = ['python', os.path.join(pipelines_dir, 'generate_report.py'), subject]
+        p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        for line in iter(p.stdout.readline, b''):
+            print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
+        p.stdout.close()
+        p.wait()
+
+    print(' + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.')
 
     return 0
 

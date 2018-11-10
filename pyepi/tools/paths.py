@@ -10,27 +10,45 @@ import pathlib
 PLATFORM = platform.system()
 HOSTNAME = platform.node()
 
-blackie = {
-    'env': {'FREESURFER_HOME': '/usr/local/freesurfer',
-            'SUBJECTS_DIR': '/mnt/d/CloudSynology/subjects',
-            'setup_cmd': ' export PATH=$PATH:/usr/local/freesurfer/bin && export FREESURFER_HOME=/usr/local/freesurfer  && source $FREESURFER_HOME/SetUpFreeSurfer.sh'
-            },
-    'tools': {
-        'dicoms_dir': '/mnt/d/CloudSynology/rawdata/__subj__/',
-        'fs_dir': '/mnt/d/CloudSynology/subjects/__subj__/',
-    }
-}
+def set_paths(platform=PLATFORM):
+    """ SETS SUBJECTS_DIR AND RAWDIR according to computer name. This function can be customized to fit various machines.
 
-osboxes = {
-    'env': {'FREESURFER_HOME': '/usr/local/freesurfer',
-            'SUBJECTS_DIR': '/home/osboxes/subjects',
-            'setup_cmd': ' export PATH=$PATH:/usr/local/freesurfer/bin && export FREESURFER_HOME=/usr/local/freesurfer  && source $FREESURFER_HOME/SetUpFreeSurfer.sh'
-            },
-    'tools': {
-        'dicoms_dir': '/home/osboxes/host/CloudSynology/rawdata/__subj__/',
-        'fs_dir': '/home/osboxes/subjects/__subj__/',
-    }
-}
+    Parameters
+    ----------
+    platform: string
+        Computer Name
+
+    Returns
+    -------
+    Paths in native and WSL format.
+    RAW_DATA
+    RAW_DATA_NATIVE
+    SUBJECTS_DIR
+    SUBJECTS_DIR_NATIVE
+
+    """
+    if platform == 'ML':
+        # Cristi's WSL setup
+        RAW_DATA = r'/mnt/d/CloudSynology/rawdata/'
+        RAW_DATA_NATIVE = r'd:\\CloudSynology\\rawdata\\'
+        SUBJECTS_DIR = r'/mnt/d/CloudSynology/subjects/'  # as seen in WSL
+        SUBJECTS_DIR_NATIVE = r'd:\\CloudSynology\\subjects\\'  # in native OS
+
+    if platform == 'osboxes':
+        # Cristi's Virtual Box setup (fedora64_osboxes)
+        RAW_DATA = r'/home/osboxes/host/CloudSynology/rawdata/'
+        RAW_DATA_NATIVE = r'/home/osboxes/host/CloudSynology/rawdata/'
+        SUBJECTS_DIR = r'/home/osboxes/subjects/'
+        SUBJECTS_DIR_NATIVE = r'/home/osboxes/subjects/'  # in native OS
+
+    if platform == 'EPIFFB-SERVER':
+        # Unibuc , Physics Dept. WSL setup
+        RAW_DATA = r'/mnt/d/CloudEpi/SEEGRaw/'
+        RAW_DATA_NATIVE = r'd:\\CloudSEpi\\SEEGRaw\\'
+        SUBJECTS_DIR = r'/mnt/d/CloudEpi/Subjects/'  # as seen in WSL
+        SUBJECTS_DIR_NATIVE = r'd:\\CloudEpi\Subjects\\'  # in native OS
+
+    return RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE
 
 
 def wsl_tempfile(filename):
@@ -60,6 +78,7 @@ def wsl_tempfile(filename):
         wsl_file = '/' + '/'.join(breakdown)
     return native_file, wsl_file
 
+
 def wsl2win(path):
     """Convert WSL path to Windows path
 
@@ -76,7 +95,7 @@ def wsl2win(path):
     win_path = [wp for wp in path.replace('/mnt/', '')]
     win_path.insert(win_path.index('/'), ':\\')
     win_path.pop(win_path.index('/'))
-    win_path = ''.join(win_path).replace('/','\\')
+    win_path = ''.join(win_path).replace('/', '\\')
     return win_path
 
 
@@ -93,7 +112,7 @@ def win2wsl(path):
         Path in WSL format (/mnt/d/....)
 
     """
-    wsl_path = '//mnt//' + path.replace(':\\','//').replace('\\','//')
+    wsl_path = '//mnt//' + path.replace(':\\', '//').replace('\\', '//')
     return wsl_path
 
 

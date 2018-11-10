@@ -32,6 +32,7 @@ setup(
         'console_scripts': [
             'epi-preproc=pyepi.cli:preproc',
             'epi-trac=pyepi.cli:trac',
+            'epi-pipe=pyepi.cli:pipeline'
         ],
     },
     install_requires=requirements,
