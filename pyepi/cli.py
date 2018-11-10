@@ -12,6 +12,10 @@ import tempfile
 import os
 import ast
 import subprocess
+import shutil
+import platform
+
+RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(platform=platform.node())
 
 class PythonLiteralOption(click.Option):
 
@@ -347,6 +351,10 @@ def pipeline(pipe, subject, **kwargs):
         p.wait()
 
     if pipe == 'report':
+        if not os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
+            os.makedirs(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES'),exist_ok=True)
+            shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls'),
+                            os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls'))
         run_list = ['python', os.path.join(pipelines_dir, 'generate_report.py'), subject]
         p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
         for line in iter(p.stdout.readline, b''):
