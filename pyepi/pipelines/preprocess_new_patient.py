@@ -154,6 +154,10 @@ if __name__ == '__main__':
         cvs_subj2mni = False
     if 'nocvs_mni2subj' in sys.argv:
         cvs_mni2subj = False
+    if 'save_contact_coordinates' in sys.argv:
+        save_contact_coordinates = True
+    if 'nosave_contact_coordinates' in sys.argv:
+        save_contact_coordinates = False
     if 'probtrack' in sys.argv:
         probtrack = True
     if 'noprobtrack' in sys.argv:
