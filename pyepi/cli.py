@@ -17,6 +17,7 @@ import platform
 
 RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(platform=platform.node())
 
+
 class PythonLiteralOption(click.Option):
 
     def type_cast_value(self, ctx, value):
@@ -343,18 +344,30 @@ def pipeline(pipe, subject, **kwargs):
         params = []
         [params.append(k) for k in kwargs.keys() if kwargs[k]]
         [params.append('no' + k) for k in kwargs.keys() if not kwargs[k]]
-        run_list = ['python', os.path.join(pipelines_dir,'preprocess_new_patient.py'), subject ] + params
+        run_list = ['python', os.path.join(pipelines_dir, 'preprocess_new_patient.py'), subject] + params
         p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
         for line in iter(p.stdout.readline, b''):
-            print(line.decode(encoding='utf-8').replace('\r','').replace('\n',''))
+            print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
         p.stdout.close()
         p.wait()
 
     if pipe == 'report':
-        if not os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
-            os.makedirs(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES'),exist_ok=True)
-            shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls'),
-                            os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls'))
+        if not os.path.isfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls')):
+            print("WARNING: SPES.xls file is missing from the raw data folder.")
+            print('EXECUTION STOPPED.')
+            sys.exit()
+        else:
+            overwrite = False
+            if os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
+                choice = input(
+                    '    -> SPES.xls already exists in the reports folder. Do you want to overwrite it with the '
+                    'version from raw data folder? [y/n] (default: y) : ')
+                if (choice == '') or (choice.lower() == 'y'):
+                    overwrite = True
+            if overwrite:
+                os.makedirs(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES'), exist_ok=True)
+                shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls'),
+                                os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls'))
         run_list = ['python', os.path.join(pipelines_dir, 'generate_report.py'), subject]
         p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
         for line in iter(p.stdout.readline, b''):
