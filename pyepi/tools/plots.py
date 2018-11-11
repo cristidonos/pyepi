@@ -115,7 +115,7 @@ def get_views(coords):
 def implantation_scheme(subj, SUBJECTS_DIR_NATIVE, fig_size=(1000, 800), electrode_label_size=2, brain_alpha=0.3):
     coords = pd.read_excel(os.path.join(SUBJECTS_DIR_NATIVE, subj, 'Contact_coordinates.xlsx'))
     brain = Brain(subj, 'both', 'pial', subjects_dir=SUBJECTS_DIR_NATIVE, alpha=brain_alpha, offset=False,
-                  cortex='low_contrast', background='white', size=fig_size, views=['lat'],
+                  cortex='low_contrast', background='black', size=fig_size, views=['lat'],
                   title=subj + ' - implantation scheme')
     brain.add_foci(coords.loc[coords['hemi'] == 'L', ['xmri', 'ymri', 'zmri']].values, scale_factor=0.2,
                    hemi='lh', color='red')
