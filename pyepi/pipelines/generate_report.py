@@ -56,11 +56,11 @@ if __name__ == '__main__':
 
     email_body = [subj]
 
-    spes_file = RAW_DATA_NATIVE + os.sep + subj + os.sep + 'SPES.xls'
+    # spes_file = RAW_DATA_NATIVE + os.sep + subj + os.sep + 'SPES.xls'
 
-    if not os.path.isfile(spes_file):
-        print("    -> SPES.xls file does not exist in subject's RAWDATA folder.")
-        sys.exit()
+    # if not os.path.isfile(spes_file):
+    #     print("    -> SPES.xls file does not exist in subject's RAWDATA folder.")
+    #     sys.exit()
 
     reports_dir = SUBJECTS_DIR_NATIVE + os.sep + subj + os.sep + 'reports'
     os.makedirs(reports_dir, exist_ok=True)
