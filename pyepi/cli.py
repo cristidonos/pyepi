@@ -356,8 +356,8 @@ def pipeline(pipe, subject, **kwargs):
                     'version from raw data folder? [y/n] (default: y) : ')
                 if (choice == '') or (choice.lower() == 'y'):
                     overwrite = True
-                else:
-                    overwrite = True
+            else:
+                overwrite = True
             if overwrite:
                 os.makedirs(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES'), exist_ok=True)
                 shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls'),
