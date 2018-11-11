@@ -350,11 +350,13 @@ def pipeline(pipe, subject, **kwargs):
             print("WARNING: SPES.xls file is missing from the raw data folder. Connectivity will not show in the report.")
         else:
             overwrite = False
-            if os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
+            if  os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
                 choice = input(
                     '    -> SPES.xls already exists in the reports folder. Do you want to overwrite it with the '
                     'version from raw data folder? [y/n] (default: y) : ')
                 if (choice == '') or (choice.lower() == 'y'):
+                    overwrite = True
+                else:
                     overwrite = True
             if overwrite:
                 os.makedirs(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES'), exist_ok=True)
