@@ -353,9 +353,7 @@ def pipeline(pipe, subject, **kwargs):
 
     if pipe == 'report':
         if not os.path.isfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls')):
-            print("WARNING: SPES.xls file is missing from the raw data folder.")
-            print('EXECUTION STOPPED.')
-            sys.exit()
+            print("WARNING: SPES.xls file is missing from the raw data folder. Connectivity will not show in the report.")
         else:
             overwrite = False
             if os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
