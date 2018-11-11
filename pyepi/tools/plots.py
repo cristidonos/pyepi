@@ -95,26 +95,27 @@ def get_views(coords):
 
     """
     views = []
-    views.append('ven')  # dorsal view does not work properly. use ventral for now. TODO: check dorsal plots
-    if coords['ymri'].mean() > 0:
-        views.append('lat')
-    else:
-        views.append('med')
     if coords['xmri'].mean() > 0:
         views.append('ros')
     else:
         views.append('cau')
-    # if coords['zmri'].mean() > 0:
-    #     views.append('dor')
-    # else:
-    #     views.append('ven')
+    if coords['ymri'].mean() > 0:
+        views.append('lat')
+    else:
+        views.append('med')
+    if coords['zmri'].mean() > 0:
+        views.append('dor')
+    else:
+        views.append('ven')
+    #views.append({'azimuth':179, 'elevation':89})  # dorsal view does not work properly. use ventral for now. TODO: check dorsal plots
+
     return views
 
 
 def implantation_scheme(subj, SUBJECTS_DIR_NATIVE, fig_size=(1000, 800), electrode_label_size=2, brain_alpha=0.3):
     coords = pd.read_excel(os.path.join(SUBJECTS_DIR_NATIVE, subj, 'Contact_coordinates.xlsx'))
     brain = Brain(subj, 'both', 'pial', subjects_dir=SUBJECTS_DIR_NATIVE, alpha=brain_alpha, offset=False,
-                  cortex='low_contrast', background='black', size=fig_size, views=['lat'],
+                  cortex='low_contrast', background='white', size=fig_size, views=['lat'],
                   title=subj + ' - implantation scheme')
     brain.add_foci(coords.loc[coords['hemi'] == 'L', ['xmri', 'ymri', 'zmri']].values, scale_factor=0.2,
                    hemi='lh', color='red')
