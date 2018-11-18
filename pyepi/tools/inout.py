@@ -164,7 +164,7 @@ def read_afni_shift(filename):
     return xfm
 
 
-def load_spes(filename, sheetname=None):
+def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0):
     """
     Loads SPES responses from a file.
 
@@ -183,6 +183,12 @@ def load_spes(filename, sheetname=None):
         Path to file containing contacts coordinates.
     sheetname: string
         Name of Excel sheet containing the SPES data
+    protocol: string
+        Protocol column in SPES data file
+    lowfreq: float
+        LowFreq value in SPES data file
+    highfreq: float
+        HighFreq value in SPES data file
     Returns
     -------
     spes: Pandas dataframe
@@ -197,6 +203,9 @@ def load_spes(filename, sheetname=None):
         sheetname = [s for s in xl.sheet_names if 'Sheet' not in s][0]
     spes_raw = pd.read_excel(filename, sheet_name=sheetname)
     spes = spes_raw
+    # apply filters
+    spes = spes[(spes['Protocol']==protocol) & (spes['LowFreq']==lowfreq) & (spes['HighFreq']==highfreq)]
+
     spes_resp_cols = [c for c in spes.columns if 'Unnamed' in c]
     spearman_func = lambda x: spearmanr(spes_currents, x[spes_resp_cols])
     mean_func = lambda x: np.mean(x[spes_resp_cols])
