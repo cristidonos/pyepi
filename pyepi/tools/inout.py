@@ -204,7 +204,9 @@ def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0):
     spes_raw = pd.read_excel(filename, sheet_name=sheetname)
     spes = spes_raw
     # apply filters
-    spes = spes[(spes['Protocol']==protocol) & (spes['LowFreq']==lowfreq) & (spes['HighFreq']==highfreq)]
+    spes = spes[
+        (spes['Protocol'] == protocol) & (spes['LowFreq'] == lowfreq) & (spes['HighFreq'] == highfreq)].reset_index(
+        drop=True)
 
     spes_resp_cols = [c for c in spes.columns if 'Unnamed' in c]
     spearman_func = lambda x: spearmanr(spes_currents, x[spes_resp_cols])
@@ -219,5 +221,3 @@ def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0):
     spes = spes.drop(columns=spes_resp_cols, axis=1)
 
     return spes, sheetname
-
-
