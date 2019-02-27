@@ -6,16 +6,17 @@ import platform
 import os
 import sys
 import pathlib
+import subprocess
 
 PLATFORM = platform.system()
 HOSTNAME = platform.node()
 
-def set_paths(platform=PLATFORM):
+def set_paths(hostname=HOSTNAME):
     """ SETS SUBJECTS_DIR AND RAWDIR according to computer name. This function can be customized to fit various machines.
 
     Parameters
     ----------
-    platform: string
+    hostname: string
         Computer Name
 
     Returns
@@ -27,21 +28,21 @@ def set_paths(platform=PLATFORM):
     SUBJECTS_DIR_NATIVE
 
     """
-    if platform == 'ML':
+    if hostname == 'ML':
         # Cristi's WSL setup
         RAW_DATA = r'/mnt/d/CloudSynology/rawdata/'
         RAW_DATA_NATIVE = r'd:\\CloudSynology\\rawdata\\'
         SUBJECTS_DIR = r'/mnt/d/CloudSynology/subjects/'  # as seen in WSL
         SUBJECTS_DIR_NATIVE = r'd:\\CloudSynology\\subjects\\'  # in native OS
 
-    if platform == 'osboxes':
+    if hostname == 'osboxes':
         # Cristi's Virtual Box setup (fedora64_osboxes)
         RAW_DATA = r'/home/osboxes/host/CloudSynology/rawdata/'
         RAW_DATA_NATIVE = r'/home/osboxes/host/CloudSynology/rawdata/'
         SUBJECTS_DIR = r'/home/osboxes/subjects/'
         SUBJECTS_DIR_NATIVE = r'/home/osboxes/subjects/'  # in native OS
 
-    if platform == 'EPIFFB-SERVER':
+    if hostname == 'EPIFFB-SERVER':
         # Unibuc , Physics Dept. WSL setup
         RAW_DATA = r'/mnt/d/CloudEpi/SEEGRaw/'
         RAW_DATA_NATIVE = r'd:\\CloudEpi\\SEEGRaw\\'
@@ -121,3 +122,28 @@ def silentremove(filename):
         os.remove(filename)
     except OSError:
         pass
+
+
+# def execute(cmd):
+#     popen = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+#     for stdout_line in iter(popen.stdout.readline, ''):
+#         yield stdout_line.replace('\r', '').replace('\n', '')
+#     popen.stdout.close()
+#     return_code = popen.wait()
+#     if return_code:
+#         raise subprocess.CalledProcessError(return_code, cmd)
+
+
+def execute(cmd):
+    os.environ['PYTHONUNBUFFERED'] = "1"
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines=True)
+    # for stdout_line in iter(proc.stdout.readline, ''):
+    #     yield stdout_line.replace('\r', '').replace('\n', '')
+    while proc.poll() is None:
+        line = proc.stdout.readline()
+        if line != "":
+            yield line.replace('\r', '').replace('\n', '')
+    proc.stdout.close()
+    return_code = proc.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)

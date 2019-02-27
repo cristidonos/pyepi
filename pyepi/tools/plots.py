@@ -3,14 +3,14 @@ Collection of plotting functions.
 
 """
 
-from pyepi.tools import inout, viz
+from pyepi.tools import viz, spes, paths
 import os
 import numpy as np
 import pandas as pd
 from mayavi import mlab
 from surfer import Brain
-from scipy.stats import zscore
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 """
 GENERAL PURPOSE PLOTTING FUNCTIONS -- MOVE TO NEW MODULE/PACKAGE?
@@ -107,7 +107,7 @@ def get_views(coords):
         views.append('dor')
     else:
         views.append('ven')
-    #views.append({'azimuth':179, 'elevation':89})  # dorsal view does not work properly. use ventral for now. TODO: check dorsal plots
+    # views.append({'azimuth':179, 'elevation':89})  # dorsal view does not work properly. use ventral for now. TODO: check dorsal plots
 
     return views
 
@@ -142,9 +142,7 @@ def implantation_scheme(subj, SUBJECTS_DIR_NATIVE, fig_size=(1000, 800), electro
     return brain
 
 
-def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='outbound', plot_type='circle',
-                               filter_spearman_r=0.5,
-                               filter_spearman_p=0.05, filter_zscore=3, percentile_threshold = 75,
+def spes_responses_by_contacts(subj, contacts=None, flow='outbound', plot_type='circle',
                                fig_size=(1000, 800), electrode_label_size=2,
                                brain_alpha=0.3, use_bezier=True,
                                visible=True, max_linewidth=3, hide_buttons=False):
@@ -154,8 +152,6 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
     ----------
     subj: string
         Subject ID
-    SUBJECTS_DIR_NATIVE: path
-        Path to Freesurfer's SUBJECTS_DIR in native OS format
     contacts: list
         List of contact names. If "plot_type" is brain, only connections from contacts in this list will be drawn. If
         "plot_type" is circle, contacts in this list will be shown by default in the circular plot.
@@ -163,15 +159,6 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
         Can be "inbound" or "outbound".
     plot_type: string
         Can be "brain" or "circle"
-    filter_spearman_r: float
-        Threshold Spearman'r for SPES responses
-    filter_spearman_p: float
-        Threshold Spearman'p for SPES responses
-    filter_zscore: float
-        Threshold zscore for SPES responses. This is helpful to remove outliers, for eaxmple contacts nearby the
-        stimulation site exhibiting stimulation artefacts.
-    percentile_threshold: float
-        Percentile threshold. Will keep responses higher than this threshold. Default Q3 (75%)
     fig_size: tuple
         Figure size in (x,y) format
     electrode_label_size: float
@@ -196,30 +183,12 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
     spes: Pandas dataframe
         Dataframe with SPES responses, thresholded according to input arguments
     """
+    RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(paths.HOSTNAME)
     brain = None
     circle = None
-    spes, sheetname = inout.load_spes(os.path.join(SUBJECTS_DIR_NATIVE, subj, 'SPES', 'SPES.xls'), sheetname='SEEG')
+    ccep, q3 = spes.get_cceps(subj)
     coords = pd.read_excel(os.path.join(SUBJECTS_DIR_NATIVE, subj, 'Contact_coordinates.xlsx'))
-    all_contacts = set(spes['RespContact'].values)
-
-    if filter_zscore is not None:
-        # filter out outliers > XX SD (mostly channels adjacent to stimulation site, but who knows what other artefacts...
-        spes = spes[zscore(spes['mean_rms']) < filter_zscore].reset_index(drop=True)
-
-    if  percentile_threshold is not None:
-        q3 = np.percentile(spes['mean_rms'].values, percentile_threshold)
-        spes = spes[spes['mean_rms'] > q3].reset_index(drop=True)
-    else:
-        q3 = 0
-
-
-    if (filter_spearman_r is not None) and (filter_spearman_p is not None):
-        spes = spes[(spes['pvalue'] < filter_spearman_p) & (spes['correlation'] > filter_spearman_r)].reset_index(
-            drop=True)
-
-    # filter out responses on stimulation contacts
-    spes = spes[spes.apply(lambda x: x['RespContact'] not in x['StimContact'], axis=1)].reset_index(drop=True)
-
+    all_contacts = set(ccep['RespContact'].values)
 
     if plot_type == 'brain':
         # Plot Brain and contacts
@@ -231,15 +200,15 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
         brain.add_foci(coords.loc[coords['hemi'] == 'R', ['xmri', 'ymri', 'zmri']].values, scale_factor=0.2,
                        hemi='rh', color='white')
 
-    stim_pairs = set(spes['StimContact'])
+    stim_pairs = set(ccep['StimContact'])
 
     if plot_type == 'brain':
         # keep only contacts of interest, defined my contacts and flow arguments
         if contacts is not None:
             if flow == 'outbound':
-                spes = spes[spes['StimContact'].str.contains('|'.join(contacts))].reset_index(drop=True)
+                ccep = ccep[ccep['StimContact'].str.contains('|'.join(contacts))].reset_index(drop=True)
             if flow == 'inbound':
-                spes = spes[spes['RespContact'].str.contains('|'.join(contacts))].reset_index(drop=True)
+                ccep = ccep[ccep['RespContact'].str.contains('|'.join(contacts))].reset_index(drop=True)
 
         lh_contacts = list(coords[coords['hemi'] == 'L']['name'].values)
         rh_contacts = list(coords[coords['hemi'] == 'R']['name'].values)
@@ -254,7 +223,7 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
                 midpoint_coords = np.mean(np.vstack([contact1_coords, contact2_coords]), axis=0)
                 x, y, z = zip(contact1_coords, contact2_coords)
                 mlab.plot3d(x, y, z, color=(1, 0.5, 0.5), tube_radius=0.5)
-                data = spes[spes['StimContact'] == sp]
+                data = ccep[ccep['StimContact'] == sp]
                 if use_bezier:
                     tb1 = 0.35  # Tightness factor for trunk
                     tb2 = 0.05  # Tightness factor for branches
@@ -292,7 +261,7 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
 
     if plot_type == 'circle':
         # norm responses to 1
-        spes['mean_rms'] = spes['mean_rms'] / max(spes['mean_rms'])
+        ccep['mean_rms'] = ccep['mean_rms'] / max(ccep['mean_rms'])
         # redundant.. but make sure stim pairs are included.
         stim_contacts = []
         for sp in stim_pairs:
@@ -318,12 +287,12 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
                 contact1 = sp[:middle]
                 ix = all_contacts.index(contact1)
                 if flow == 'outbound':
-                    resps = spes[spes['StimContact'] == sp].reset_index(drop=True)
+                    resps = ccep[ccep['StimContact'] == sp].reset_index(drop=True)
                     for r in np.arange(0, resps.shape[0]):
                         adjacency_matrix[ix][all_contacts.index(resps.iloc[r]['RespContact'])] = resps.iloc[r][
                             'mean_rms']
                 if flow == 'inbound':
-                    resps = spes[spes['StimContact'] == sp].reset_index(drop=True)
+                    resps = ccep[ccep['StimContact'] == sp].reset_index(drop=True)
                     for r in np.arange(0, resps.shape[0]):
                         adjacency_matrix[all_contacts.index(resps.iloc[r]['RespContact'])][ix] = resps.iloc[r][
                             'mean_rms']
@@ -333,12 +302,22 @@ def spes_responses_by_contacts(subj, SUBJECTS_DIR_NATIVE, contacts=None, flow='o
 
         circle = viz.CircularGraph(adjacency_matrix, all_contacts, connection_colors=contact_colors,
                                    node_colors=contact_colors, visible=visible, highlighted_labels=contacts,
-                                   max_linewidth=max_linewidth, hide_buttons = hide_buttons)
+                                   max_linewidth=max_linewidth, hide_buttons=hide_buttons)
         circle.ax.annotate(', '.join([subj, flow]),
                            xy=(0, 0), xycoords='axes fraction',
                            xytext=(-20, -20), textcoords='offset pixels',
                            horizontalalignment='left',
                            verticalalignment='bottom')
 
-    return brain, circle, spes
+    return brain, circle, ccep
 
+
+def adjacency_matrix_heatmap(adj_mat, labels='auto', show_values=True, fmt='.3f', values_font_size=6, colormap='Reds',
+                             cmin=0, cmax=None):
+    ax = sns.heatmap(adj_mat, xticklabels=labels, yticklabels=labels, annot=True, fmt=fmt,
+                     annot_kws={'fontsize': values_font_size}, square=True, vmin=cmin, vmax=cmax, cmap=colormap)
+    plt.gcf().subplots_adjust(bottom=0.20)
+    plt.gcf().subplots_adjust(left=0.20)
+    ax.set_xlabel('Recording Structure', fontdict={'fontweight': 'bold'})
+    ax.set_ylabel('Stimulation Structure', fontdict={'fontweight': 'bold'})
+    return ax

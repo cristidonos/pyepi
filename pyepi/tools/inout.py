@@ -164,7 +164,7 @@ def read_afni_shift(filename):
     return xfm
 
 
-def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0):
+def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0,rmswindow=100, rmswindowstart=10):
     """
     Loads SPES responses from a file.
 
@@ -189,6 +189,10 @@ def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0):
         LowFreq value in SPES data file
     highfreq: float
         HighFreq value in SPES data file
+    rmswindow: float
+        RmsWindow value in SPES data file
+    rmswindowstart: float
+        RmsWindowStart value in SPES data file
     Returns
     -------
     spes: Pandas dataframe
@@ -205,7 +209,7 @@ def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0):
     spes = spes_raw
     # apply filters
     spes = spes[
-        (spes['Protocol'] == protocol) & (spes['LowFreq'] == lowfreq) & (spes['HighFreq'] == highfreq)].reset_index(
+        (spes['Protocol'] == protocol) & (spes['LowFreq'] == lowfreq) & (spes['HighFreq'] == highfreq) & (spes['RmsWindow'] == rmswindow) & (spes['RmsWindowStart'] == rmswindowstart)].reset_index(
         drop=True)
 
     spes_resp_cols = [c for c in spes.columns if 'Unnamed' in c]

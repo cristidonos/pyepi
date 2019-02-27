@@ -15,7 +15,7 @@ import subprocess
 import shutil
 import platform
 
-RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(platform=platform.node())
+RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(hostname=paths.HOSTNAME)
 
 
 class PythonLiteralOption(click.Option):
@@ -308,11 +308,12 @@ def trac(job, **kwargs):
 @click.option('--recon/--no-recon', default=True, help='run recon')
 @click.option('--tracula/--no-tracula', default=True, help='run tracula')
 @click.option('--cvs_subj2mni/--no-cvs_subj2mni', default=True, help='run subj to MNI CVS registration')
-@click.option('--cvs_mni2subj/--no-cvs_mni2subj', default=None, help='run MNI to subj CVS registration')
-@click.option('--probtrack/--no-probtrack', default=None, help='run probabilistic tractography with contacts as seeds')
-@click.option('--tessprobtrack/--no-tessprobtrack', default=None, help='tesselate probabilistic tractography')
-@click.option('--morphprobtrack/--no-morphprobtrack', default=None, help='morph probabilistic tractography to MNI')
-@click.option('--save_contact_coordinates/--no-save_contact_coordinates', default=None, help='save contact coordinate in xls format')
+@click.option('--cvs_mni2subj/--no-cvs_mni2subj', default=True, help='run MNI to subj CVS registration')
+@click.option('--probtrack/--no-probtrack', default=True, help='run probabilistic tractography with contacts as seeds')
+@click.option('--tessprobtrack/--no-tessprobtrack', default=True, help='tesselate probabilistic tractography')
+@click.option('--morphprobtrack/--no-morphprobtrack', default=True, help='morph probabilistic tractography to MNI')
+@click.option('--morphcontacts/--no-morphcontacts', default=True, help='morph contacts to MNI')
+@click.option('--save_contact_coordinates/--no-save_contact_coordinates', default=True, help='save contact coordinate in xls format')
 def pipeline(pipe, subject, **kwargs):
     """ UNIBUC pipelines
 
@@ -330,7 +331,7 @@ def pipeline(pipe, subject, **kwargs):
 
     """
     tstart = time.time()
-    print(' + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    print(' + Starting pipeline at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
     pipelines_dir = os.path.dirname(pipelines.__file__)
 
@@ -339,11 +340,13 @@ def pipeline(pipe, subject, **kwargs):
         [params.append(k) for k in kwargs.keys() if kwargs[k]]
         [params.append('no' + k) for k in kwargs.keys() if not kwargs[k]]
         run_list = ['python', os.path.join(pipelines_dir, 'preprocess_new_patient.py'), subject] + params
-        p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
-        for line in iter(p.stdout.readline, b''):
-            print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
-        p.stdout.close()
-        p.wait()
+        for line in paths.execute(run_list):
+            print(line)
+        # p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        # for line in iter(p.stdout.readline, b''):
+        #     print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
+        # p.stdout.close()
+        # p.wait()
 
     if pipe == 'report':
         if not os.path.isfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls')):
@@ -363,11 +366,13 @@ def pipeline(pipe, subject, **kwargs):
                 shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls'),
                                 os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls'))
         run_list = ['python', os.path.join(pipelines_dir, 'generate_report.py'), subject]
-        p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
-        for line in iter(p.stdout.readline, b''):
-            print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
-        p.stdout.close()
-        p.wait()
+        for line in paths.execute(run_list):
+            print(line)
+        # p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        # for line in iter(p.stdout.readline, b''):
+        #     print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
+        # p.stdout.close()
+        # p.wait()
 
     print(' + Finished in ' + str((time.time() - tstart) / 60) + ' minutes.')
 

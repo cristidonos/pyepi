@@ -37,8 +37,7 @@ from nbparameterise import extract_parameters, replace_definitions, parameter_va
 
 from pyepi.tools import paths, notifications
 
-RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(platform=platform.node())
-
+RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(paths.HOSTNAME)
 MAX_RAM_SIZE = psutil.virtual_memory()[0] / 2. ** 30  # in GB
 CPU_COUNT = psutil.cpu_count()
 
