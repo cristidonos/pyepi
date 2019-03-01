@@ -590,7 +590,7 @@ class newpatient:
         print(jobs)
         print(allowed_jobs)
         jobs = self.setup_jobs(args, allowed_jobs, jobs)
-
+        print(jobs)
         print('\nNumber of CPUs: ' + str(self.CPU_COUNT) + '.')
         print('RAM: ' + str(self.MAX_RAM_SIZE) + ' Gb.\n')
 

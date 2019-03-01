@@ -344,7 +344,7 @@ def pipeline(pipe, subject, **kwargs):
         # run_list = ['python', os.path.join(pipelines_dir, 'preprocess_new_patient.py'), subject] + params
         # for line in paths.execute(run_list):
         #     print(line)
-
+        print(params)
         np = new_patient.newpatient(subject, params)
         # p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
         # for line in iter(p.stdout.readline, b''):
