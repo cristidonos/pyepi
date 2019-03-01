@@ -206,11 +206,11 @@ class newpatient:
             if sys.platform == 'win32':
                 pprfile = paths.wsl2win(pprfile)
                 patientdatafile = paths.wsl2win(patientdatafile)
-                allowed_jobs['save_contact_coordinates'] = True
-                allowed_jobs['probtrack'] = True
-                allowed_jobs['morphcontacts'] = True
-                allowed_jobs['tessprobtrack'] = True
-                allowed_jobs['morphprobtrack'] = True
+            allowed_jobs['save_contact_coordinates'] = True
+            allowed_jobs['probtrack'] = True
+            allowed_jobs['morphcontacts'] = True
+            allowed_jobs['tessprobtrack'] = True
+            allowed_jobs['morphprobtrack'] = True
             if (not os.path.isfile(pprfile)) or (not os.path.isfile(patientdatafile)):
                 raise OSError
         except OSError:
@@ -230,9 +230,6 @@ class newpatient:
                 sys.exit()
         data_dir['pprfile'] = pprfile
         data_dir['patientdatafile'] = patientdatafile
-        print(allowed_jobs)
-        print(data_dir)
-        print('---')
         return data_dir, allowed_jobs
 
     def setup_jobs(self, args, allowed_jobs, jobs):
