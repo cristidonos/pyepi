@@ -26,7 +26,8 @@ RUN apt-get update && \
                        libgfortran-4.8-dev \
                        curl\
                        wget\
-                       python-pip
+                       python-pip\
+                       bc
 
 
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50 && \
@@ -79,7 +80,7 @@ ENV PATH /$working_dir/freesurfer/bin:/$working_dir/freesurfer/fsfast/bin:/$work
 ENV PYTHONPATH=""
 
 # Copy freesurfer license
-COPY license.txt $working_dir/license.txt
+COPY license.txt $working_dir/freesurfer/license.txt
 
 # Add Anaconda packages
 ENV PATH /opt/conda/bin:$PATH

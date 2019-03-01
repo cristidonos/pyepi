@@ -8,6 +8,7 @@ from pyepi.interfaces import freesurfer
 from pyepi.interfaces import fsl
 from pyepi.tools import paths
 from pyepi import pipelines
+from pyepi.pipelines import new_patient
 import tempfile
 import os
 import ast
@@ -339,9 +340,12 @@ def pipeline(pipe, subject, **kwargs):
         params = []
         [params.append(k) for k in kwargs.keys() if kwargs[k]]
         [params.append('no' + k) for k in kwargs.keys() if not kwargs[k]]
-        run_list = ['python', os.path.join(pipelines_dir, 'preprocess_new_patient.py'), subject] + params
-        for line in paths.execute(run_list):
-            print(line)
+
+        # run_list = ['python', os.path.join(pipelines_dir, 'preprocess_new_patient.py'), subject] + params
+        # for line in paths.execute(run_list):
+        #     print(line)
+
+        np = new_patient.newpatient(subject, params)
         # p = subprocess.Popen(run_list, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
         # for line in iter(p.stdout.readline, b''):
         #     print(line.decode(encoding='utf-8').replace('\r', '').replace('\n', ''))
