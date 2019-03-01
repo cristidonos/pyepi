@@ -59,13 +59,6 @@ class newpatient:
     MAX_RAM_SIZE = psutil.virtual_memory()[0] / 2. ** 30  # in GB
     CPU_COUNT = psutil.cpu_count()
 
-    # PARAMETERS (using paths in WSL format, ie. /mnt/d/....)
-    job_list = ['verbose', 'recon', 'tracula', 'cvs_subj2mni', 'cvs_mni2subj', 'save_contact_coordinates',
-                'morphcontacts',
-                'probtrack', 'tessprobtrack', 'morphprobtrack', 'send_notification_when_done']
-    jobs = {}
-    _ = [jobs.__setitem__(k, True) for k in job_list]
-
     send_notifications_to_email = 'cristidonos@yahoo.com'
 
     # tracula
@@ -630,8 +623,15 @@ class newpatient:
         self.subj = subj
         self.verbose = False
 
+        # PARAMETERS (using paths in WSL format, ie. /mnt/d/....)
+        job_list = ['verbose', 'recon', 'tracula', 'cvs_subj2mni', 'cvs_mni2subj', 'save_contact_coordinates',
+                    'morphcontacts',
+                    'probtrack', 'tessprobtrack', 'morphprobtrack', 'send_notification_when_done']
+        jobs={}
+        _ = [jobs.__setitem__(k, True) for k in job_list]
+
         data_dir, allowed_jobs = self.run_data_consistency_checks(subj)
-        jobs = self.setup_jobs(args, allowed_jobs, self.jobs)
+        jobs = self.setup_jobs(args, allowed_jobs, jobs)
 
         print('\nNumber of CPUs: ' + str(self.CPU_COUNT) + '.')
         print('RAM: ' + str(self.MAX_RAM_SIZE) + ' Gb.\n')
