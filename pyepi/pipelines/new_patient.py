@@ -230,7 +230,8 @@ class newpatient:
                 sys.exit()
         data_dir['pprfile'] = pprfile
         data_dir['patientdatafile'] = patientdatafile
-
+        print(allowed_jobs)
+        print('---')
         return data_dir, allowed_jobs
 
     def setup_jobs(self, args, allowed_jobs, jobs):
@@ -240,49 +241,6 @@ class newpatient:
             else:
                 jobs[k] = jobs[k] & allowed_jobs[k]
 
-        # if (os.path.isdir(SUBJECTS_DIR_NATIVE + subj + os.sep + 'cvs' + os.sep) == False) | (
-        #     (not jobs['cvs_subj2mni']) & (not jobs['save_contact_coordinates'])):
-        #     print(" WARNING: CVS to MNI Space not found. Use 'cvs_subj2mni' and 'save_contact_coordinates' arguments.")
-        #     print(' Will not morph contact coordinates.')
-        #     jobs['morphcontacts'] = False
-        # if 'verbose' in args:
-        #     jobs['verbose'] = True
-        # if 'norecon' in args:
-        #     jobs['recon'] = False
-        # if 'recon' in args:
-        #     jobs['recon'] = True
-        # if 'tracula' in args:
-        #     jobs['tracula'] = True
-        # if 'notracula' in args:
-        #     jobs['tracula'] = False
-        # if 'cvs_subj2mni' in args:
-        #     jobs['cvs_subj2mni'] = True
-        # if 'cvs_mni2subj' in args:
-        #     jobs['cvs_mni2subj'] = True
-        # if 'nocvs_subj2mni' in args:
-        #     jobs['cvs_subj2mni'] = False
-        # if 'nocvs_mni2subj' in args:
-        #     jobs['cvs_mni2subj'] = False
-        # if 'save_contact_coordinates' in args:
-        #     jobs['save_contact_coordinates'] = True
-        # if 'nosave_contact_coordinates' in args:
-        #     jobs['save_contact_coordinates'] = False
-        # if 'morphcontacts' in args:
-        #     jobs['morphcontacts'] = True
-        # if 'nomorphcontacts' in args:
-        #     jobs['morphcontacts'] = False
-        # if 'probtrack' in args:
-        #     jobs['probtrack'] = True
-        # if 'noprobtrack' in args:
-        #     jobs['probtrack'] = False
-        # if 'tessprobtrack' in args:
-        #     jobs['tessprobtrack'] = True
-        # if 'notessprobtrack' in args:
-        #     jobs['tessprobtrack'] = False
-        # if 'morphprobtrack' in args:
-        #     jobs['morphprobtrack'] = True
-        # if 'nomorphprobtrack' in args:
-        #     jobs['morphprobtrack'] = False
         return jobs
 
     def run_recon(self, subj, data_dir, jobs, email_body):
