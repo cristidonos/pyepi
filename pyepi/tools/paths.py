@@ -28,6 +28,14 @@ def set_paths(hostname=HOSTNAME):
     SUBJECTS_DIR_NATIVE
 
     """
+
+    # Default docker image setup
+    RAW_DATA = r'/home/host/rawdata/'
+    RAW_DATA_NATIVE = r'/home/host/rawdata/'
+    SUBJECTS_DIR = r'/home/host/subjects/'
+    SUBJECTS_DIR_NATIVE = r'/home/host/subjects/'
+
+    # Override if necessary
     if hostname == 'ML':
         # Cristi's WSL setup
         RAW_DATA = r'/mnt/d/CloudSynology/rawdata/'
