@@ -4,10 +4,10 @@
 import click
 import time
 import sys
-from .interfaces import freesurfer
-from .interfaces import fsl
-from .tools import paths
-from . import pipelines
+from pyepi.interfaces import freesurfer
+from pyepi.interfaces import fsl
+from pyepi.tools import paths
+from pyepi import pipelines
 import tempfile
 import os
 import ast
