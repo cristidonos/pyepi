@@ -135,6 +135,7 @@ class newpatient:
         data_dir = {}
         allowed_jobs['verbose'] = True
         allowed_jobs['send_notification_when_done'] = True
+        allowed_jobs['save_contact_coordinates'] = True
         try:
             t1dir = self.RAW_DATA + os.sep + subj + os.sep + 'T1' + os.sep
             if sys.platform == 'win32':
@@ -211,7 +212,6 @@ class newpatient:
                 allowed_jobs['tessprobtrack'] = True
                 allowed_jobs['morphprobtrack'] = True
             if (not os.path.isfile(pprfile)) or (not os.path.isfile(patientdatafile)):
-                print('asas')
                 raise OSError
         except OSError:
             print("WARNING: Subject's .ppr and/or Patient Data.xlsx are missing.")
