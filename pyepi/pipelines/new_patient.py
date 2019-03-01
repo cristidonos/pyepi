@@ -631,6 +631,8 @@ class newpatient:
         _ = [jobs.__setitem__(k, True) for k in job_list]
 
         data_dir, allowed_jobs = self.run_data_consistency_checks(subj)
+        print(jobs)
+        print(allowed_jobs)
         jobs = self.setup_jobs(args, allowed_jobs, jobs)
 
         print('\nNumber of CPUs: ' + str(self.CPU_COUNT) + '.')
