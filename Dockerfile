@@ -83,7 +83,7 @@ COPY license.txt $working_dir/license.txt
 
 # Add Anaconda packages
 ENV PATH /opt/conda/bin:$PATH
-RUN conda install numpy pandas xlrd openpyxl tqdm matplotlib nibabel git mayavi psutil seaborn jupyter_contrib_nbextensions pip -c conda-forge
+RUN conda install numpy pandas xlrd openpyxl tqdm matplotlib nibabel git mayavi psutil seaborn jupyter_contrib_nbextensions dcm2niix pip -c conda-forge
 
 # add more packages with pip
 RUN ["/bin/bash", "-c","\
