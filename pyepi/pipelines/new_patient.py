@@ -231,6 +231,7 @@ class newpatient:
         data_dir['pprfile'] = pprfile
         data_dir['patientdatafile'] = patientdatafile
         print(allowed_jobs)
+        print(data_dir)
         print('---')
         return data_dir, allowed_jobs
 
