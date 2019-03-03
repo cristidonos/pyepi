@@ -588,7 +588,8 @@ class newpatient:
 
         data_dir, allowed_jobs = self.run_data_consistency_checks(subj)
         jobs = self.setup_jobs(args, allowed_jobs, jobs)
-
+        print(args)
+        print(jobs)
         print('\nNumber of CPUs: ' + str(self.CPU_COUNT) + '.')
         print('RAM: ' + str(self.MAX_RAM_SIZE) + ' Gb.\n')
 
