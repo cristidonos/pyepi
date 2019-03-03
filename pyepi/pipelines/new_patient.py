@@ -575,7 +575,7 @@ class newpatient:
         email_body.append(log)
         return email_body
 
-    def __init__(self, subj, *args):
+    def __init__(self, subj, args):
         self.subj = subj
         self.verbose = False
 
