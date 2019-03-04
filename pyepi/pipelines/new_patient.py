@@ -87,7 +87,7 @@ class newpatient:
     smooth_surface_iterations = 5
 
     # HELP FUNCTIONS FOR PARALLEL PROCESSING
-    @deco.concurrent(processes=int(min(MAX_RAM_SIZE // 8, CPU_COUNT)))
+    # @deco.concurrent(processes=int(min(MAX_RAM_SIZE // 8, CPU_COUNT)))
     def par_cvs_apply_morph(self, subj=None, volume=None, output_dir=None,
                             verbose=None):
         current_file = output_dir + os.path.basename(volume).replace('nii.gz', 'mgz')
@@ -109,7 +109,7 @@ class newpatient:
                                        verbose=verbose)
             time.sleep(1 + random.random() * 5)
 
-    @deco.synchronized
+    # @deco.synchronized
     def run_cvs_apply_morph(self, probtrac_files, probtrac_cvs_dir):
         for volume in probtrac_files:
             self.par_cvs_apply_morph(subj=self.subj,
