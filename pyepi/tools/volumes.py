@@ -54,7 +54,7 @@ def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None):
 
     """
     atlas = nib.load(atlas_volume).get_data()
-    if len(atlas.shape)>3:
+    if len(atlas.shape) > 3:
         atlas = np.squeeze(atlas)
 
     lut = pd.read_excel(lut_table)
@@ -70,59 +70,64 @@ def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None):
             y = np.round(coords.loc[i]['ymrivox']).astype(np.int)
             z = np.round(coords.loc[i]['zmrivox']).astype(np.int)
         else:
-            x = np.round(coords.loc[i][name_prefix+ '_xmrivox']).astype(np.int)
-            y = np.round(coords.loc[i][name_prefix+ '_ymrivox']).astype(np.int)
-            z = np.round(coords.loc[i][name_prefix+ '_zmrivox']).astype(np.int)
+            x = np.round(coords.loc[i][name_prefix + '_xmrivox']).astype(np.int)
+            y = np.round(coords.loc[i][name_prefix + '_ymrivox']).astype(np.int)
+            z = np.round(coords.loc[i][name_prefix + '_zmrivox']).astype(np.int)
 
-        atlas_value = atlas[x][y][z]
-        center_voxel.append(lut[lut['No'] == atlas_value]['Name'].values[0])
-        v = np.zeros((3, 3, 3))
+        if (0<= x <= 256) & (0<= y <= 256) & (0<= z <= 256):
+            atlas_value = atlas[x][y][z]
+            center_voxel.append(lut[lut['No'] == atlas_value]['Name'].values[0])
+            v = np.zeros((3, 3, 3))
 
-        # search the center voxel and the 8 connected voxels.
-        v[0][0][0] = atlas[x - 1][y - 1][z - 1]
-        v[0][0][1] = atlas[x - 1][y - 1][z]
-        v[0][0][2] = atlas[x - 1][y - 1][z + 1]
+            # search the center voxel and the 8 connected voxels.
+            v[0][0][0] = atlas[x - 1][y - 1][z - 1]
+            v[0][0][1] = atlas[x - 1][y - 1][z]
+            v[0][0][2] = atlas[x - 1][y - 1][z + 1]
 
-        v[0][1][0] = atlas[x - 1][y][z - 1]
-        v[0][1][1] = atlas[x - 1][y][z]
-        v[0][1][2] = atlas[x - 1][y][z + 1]
+            v[0][1][0] = atlas[x - 1][y][z - 1]
+            v[0][1][1] = atlas[x - 1][y][z]
+            v[0][1][2] = atlas[x - 1][y][z + 1]
 
-        v[0][2][0] = atlas[x - 1][y + 1][z - 1]
-        v[0][2][1] = atlas[x - 1][y + 1][z]
-        v[0][2][2] = atlas[x - 1][y + 1][z + 1]
+            v[0][2][0] = atlas[x - 1][y + 1][z - 1]
+            v[0][2][1] = atlas[x - 1][y + 1][z]
+            v[0][2][2] = atlas[x - 1][y + 1][z + 1]
 
-        v[1][0][0] = atlas[x][y - 1][z - 1]
-        v[1][0][1] = atlas[x][y - 1][z]
-        v[1][0][2] = atlas[x][y - 1][z + 1]
+            v[1][0][0] = atlas[x][y - 1][z - 1]
+            v[1][0][1] = atlas[x][y - 1][z]
+            v[1][0][2] = atlas[x][y - 1][z + 1]
 
-        v[1][1][0] = atlas[x][y][z - 1]
-        v[1][1][1] = atlas[x][y][z]
-        v[1][1][2] = atlas[x][y][z + 1]
+            v[1][1][0] = atlas[x][y][z - 1]
+            v[1][1][1] = atlas[x][y][z]
+            v[1][1][2] = atlas[x][y][z + 1]
 
-        v[1][2][0] = atlas[x][y + 1][z - 1]
-        v[1][2][1] = atlas[x][y + 1][z]
-        v[1][2][2] = atlas[x][y + 1][z + 1]
+            v[1][2][0] = atlas[x][y + 1][z - 1]
+            v[1][2][1] = atlas[x][y + 1][z]
+            v[1][2][2] = atlas[x][y + 1][z + 1]
 
-        v[2][0][0] = atlas[x + 1][y - 1][z - 1]
-        v[2][0][1] = atlas[x + 1][y - 1][z]
-        v[2][0][2] = atlas[x + 1][y - 1][z + 1]
+            v[2][0][0] = atlas[x + 1][y - 1][z - 1]
+            v[2][0][1] = atlas[x + 1][y - 1][z]
+            v[2][0][2] = atlas[x + 1][y - 1][z + 1]
 
-        v[2][1][0] = atlas[x + 1][y][z - 1]
-        v[2][1][1] = atlas[x + 1][y][z]
-        v[2][1][2] = atlas[x + 1][y][z + 1]
+            v[2][1][0] = atlas[x + 1][y][z - 1]
+            v[2][1][1] = atlas[x + 1][y][z]
+            v[2][1][2] = atlas[x + 1][y][z + 1]
 
-        v[2][2][0] = atlas[x + 1][y + 1][z - 1]
-        v[2][2][1] = atlas[x + 1][y + 1][z]
-        v[2][2][2] = atlas[x + 1][y + 1][z + 1]
+            v[2][2][0] = atlas[x + 1][y + 1][z - 1]
+            v[2][2][1] = atlas[x + 1][y + 1][z]
+            v[2][2][2] = atlas[x + 1][y + 1][z + 1]
 
-        histo = pd.Series(v.ravel()).value_counts().to_frame().sort_values(by=0, axis=0,
-                                                                           ascending=False)
-        histo_clean = histo.loc[[i for i in histo.index if i not in wm_and_unknown]].sort_values(by=0, axis=0,
-                                                                                                 ascending=False)
-        if histo_clean.shape[0] > 0:
-            most_likely.append(lut[lut['No'] == histo_clean.index[0].astype(int)]['Name'].values[0])
+            histo = pd.Series(v.ravel()).value_counts().to_frame().sort_values(by=0, axis=0,
+                                                                               ascending=False)
+            histo_clean = histo.loc[[i for i in histo.index if i not in wm_and_unknown]].sort_values(by=0, axis=0,
+                                                                                                     ascending=False)
+            if histo_clean.shape[0] > 0:
+                most_likely.append(lut[lut['No'] == histo_clean.index[0].astype(int)]['Name'].values[0])
+            else:
+                most_likely.append(lut[lut['No'] == histo.index[0].astype(int)]['Name'].values[0])
         else:
-            most_likely.append(lut[lut['No'] == histo.index[0].astype(int)]['Name'].values[0])
+            # TODO: figure out why some contacts don't morph mni, resulting in an empty volume.
+            most_likely.append('Unknown')
+            center_voxel.append('Unknown')
     if name_prefix is None:
         ecol = 'exact'
         mlcol = 'most_likely'
@@ -224,25 +229,28 @@ def contact_volume_to_mni_coordinates(contact_volume):
     """
     vol = nib.load(contact_volume)
     data = vol.get_data()
-
     voxels = np.where(data > 0)
     nvoxels = voxels[0].shape[0]  # number of non-zero voxels
-    max_voxel_intensity = np.max(data[voxels])
-    mean_voxel_intensity = np.mean(data[voxels])
-    std_voxel_intensity = np.std(data[voxels])
-    xmrivox, ymrivox, zmrivox = [np.average(voxels[0], weights=data[voxels]),
-                                 np.average(voxels[1], weights=data[voxels]),
-                                 np.average(voxels[2], weights=data[voxels])]
-    # RAS coordinates in MNI
-    xmri, ymri, zmri, _ = np.round(np.dot(np.array([xmrivox, ymrivox, zmrivox, 1]), vol.header.get_vox2ras().T),
-                                   decimals=3)
-    # voxel coordinates in MNI
-    xmrivox, ymrivox, zmrivox = np.int16(np.round(np.array([xmrivox, ymrivox, zmrivox])))
-
+    if nvoxels > 0:
+        max_voxel_intensity = np.max(data[voxels])
+        mean_voxel_intensity = np.mean(data[voxels])
+        std_voxel_intensity = np.std(data[voxels])
+        xmrivox, ymrivox, zmrivox = [np.average(voxels[0], weights=data[voxels]),
+                                     np.average(voxels[1], weights=data[voxels]),
+                                     np.average(voxels[2], weights=data[voxels])]
+        # RAS coordinates in MNI
+        xmri, ymri, zmri, _ = np.round(np.dot(np.array([xmrivox, ymrivox, zmrivox, 1]), vol.header.get_vox2ras().T),
+                                       decimals=3)
+        # voxel coordinates in MNI
+        xmrivox, ymrivox, zmrivox = np.int16(np.round(np.array([xmrivox, ymrivox, zmrivox])))
+    else:
+        xmrivox, ymrivox, zmrivox = np.nan, np.nan, np.nan
+        xmri, ymri, zmri = np.nan, np.nan, np.nan
+        max_voxel_intensity, mean_voxel_intensity, std_voxel_intensity = np.nan, np.nan, np.nan
     mri_coords = np.array([xmri, ymri, zmri])
     mri_vox = np.array([xmrivox, ymrivox, zmrivox])
     mri_stats = {'nvoxels': nvoxels,
-                 'max_voxel_intensity' : max_voxel_intensity,
+                 'max_voxel_intensity': max_voxel_intensity,
                  'mean_voxel_intensity': mean_voxel_intensity,
-                 'std_voxel_intensity' : std_voxel_intensity}
+                 'std_voxel_intensity': std_voxel_intensity}
     return mri_coords, mri_vox, mri_stats

@@ -96,6 +96,7 @@ class newpatient:
             # bash processes may end up "suspended" on WSL. Check and kill such processes
             for pid in psutil.process_iter():
                 if (pid.name() == 'bash') and (pid.status() == 'stopped'):
+                    print('killing pid' + pid.name())
                     pid.kill()
         else:
             keep_going = not os.path.isfile(current_file)
@@ -393,7 +394,6 @@ class newpatient:
                                     ], sort=False).reset_index(drop=True)
 
         all_coords = all_coords.merge(mni_coords.reset_index(drop=True), sort=False)
-
         all_coords = volumes.identify_voxel_location(all_coords,
                                                      self.SUBJECTS_DIR_NATIVE + 'Yeo_JNeurophysiol11_MNI152' + os.sep + 'Yeo2011_7Networks_MNI152_FreeSurferConformed1mm_LiberalMask.nii.gz',
                                                      os.path.dirname(freesurfer.__file__) + os.sep + 'YeoLUT.xlsx',

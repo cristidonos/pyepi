@@ -80,7 +80,7 @@ ENV PATH /$working_dir/freesurfer/bin:/$working_dir/freesurfer/fsfast/bin:/$work
 ENV PYTHONPATH=""
 
 # Copy freesurfer license
-COPY license.txt $working_dir/freesurfer/license.txt
+COPY pyepi/extra/license.txt $working_dir/freesurfer/license.txt
 
 # Add Anaconda packages
 ENV PATH /opt/conda/bin:$PATH
@@ -91,6 +91,15 @@ RUN ["/bin/bash", "-c","\
     pip install git+https://github.com/alex-sherman/deco &&\
     pip install git+https://github.com/cristidonos/PySurfer &&\
     pip install git+https://github.com/cristidonos/pyepi"]
+
+#install fsl
+RUN apt-get install -y fsl
+
+ENV FSLDIR=/usr/share/fsl/5.0
+ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
+ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
+RUN alias python=/usr/bin/python2
+
 
 # Configuring access to Jupyter
 RUN mkdir /home/notebooks

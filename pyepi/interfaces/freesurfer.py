@@ -48,7 +48,7 @@ def recon(subj=None, t1_file=None, t2_file=None, openmp=None, verbose=0):
             print('\n! Openmp parameter should be an integer in [1..15] range.\n')
             return
     cmd = ' '.join(cmd)
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
@@ -84,7 +84,7 @@ def cvs_subj2mni(subj=None, openmp=None, verbose=0):
 
     setup_cmd = 'export PATH=$PATH:$FREESURFER_HOME/bin && source $FREESURFER_HOME/SetUpFreeSurfer.sh'
     # cmd = ' && '.join([setup_cmd, cmd])
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
@@ -122,7 +122,7 @@ def cvs_mni2subj(subj=None, subjects_dir=None, openmp=None, verbose=0):
 
     setup_cmd = 'export PATH=$PATH:$FREESURFER_HOME/bin && source $FREESURFER_HOME/SetUpFreeSurfer.sh'
     # cmd = ' && '.join([setup_cmd, cmd])
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
@@ -164,10 +164,15 @@ def cvs_apply_morph(subj, subjects_dir, volume, output_volume, output_dir, morph
                '/cvs_avg35_inMNI135_to_subj/el_reg_to' + subj + '.tm3d  vol ' +
                volume + ' ' +
                output_dir + output_volume + ' ' + interpolation)
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # print('starting new morph')
+        # for line in paths.execute(' '.join(['bash', '-c', '"', cmd ,'"'])):
+        #     print(line)
+
     if (verbose == 1) or (len(result.stderr) > 0):
-        print('\n\n' + result.stdout.decode('utf-8'))
-        print('\n' + result.stderr.decode('utf-8'))
+            print('\n\n' + result.stdout.decode('utf-8'))
+            print('\n' + result.stderr.decode('utf-8'))
 
 
 def tracula_config(subj, dicom, config_folder=None, subjects_dir=None, dtroot=None, bvecfile=None, bvalfile=None,
@@ -291,7 +296,7 @@ def tracula_run(subj, prep=True, bedp=True, path=True, cfg_file=None, verbose=0)
 
     cmd = ' && '.join(commands)
 
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
@@ -356,7 +361,7 @@ def tesselate(input_volume, threshold, output_surface=None, smooth_surface_itera
             commands.append('--surf-smooth ' + str(smooth_surface_iterations))
 
     cmd = ' '.join(commands)
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     paths.silentremove(normalized_volume_native)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
@@ -396,7 +401,7 @@ def dcm2niix(dcm_file, output_filename, output_folder, executable_path='', verbo
     else:
         cmd = 'dcm2niix -f "' + output_filename + '" -d y -o "' + output_folder + '" "' + dcm_file + '"'
     cmd = ' && '.join(['mkdir -p ' + output_folder, cmd])
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
