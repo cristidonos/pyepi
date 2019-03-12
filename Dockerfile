@@ -94,7 +94,8 @@ RUN ["/bin/bash", "-c","\
 
 #install fsl
 RUN alias python=/usr/bin/python2
-RUN python pyepi/extra/fslinstaller.py
+COPY pyepi/extra/fslinstaller.py $working_dir/fslinstaller.py
+RUN python $working_dir/fslinstaller.py
 ENV FSLDIR=/usr/share/fsl/5.0
 ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
 ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
