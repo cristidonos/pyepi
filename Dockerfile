@@ -93,12 +93,11 @@ RUN ["/bin/bash", "-c","\
     pip install git+https://github.com/cristidonos/pyepi"]
 
 #install fsl
-RUN apt-get install -y fsl
-
+RUN alias python=/usr/bin/python2
+RUN python pyepi/extra/fslinstaller.py
 ENV FSLDIR=/usr/share/fsl/5.0
 ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
 ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
-RUN alias python=/usr/bin/python2
 
 
 # Configuring access to Jupyter
