@@ -100,7 +100,10 @@ ENV FSLDIR=/usr/share/fsl/5.0
 ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
 ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
 
-#RUN alias python=/usr/bin/python2
+RUN sed -i 's;#!/bin/sh;#!/bin/bash;g' /home/freesurfer/bin/bedpostx_mgh
+RUN sed -i 's;#!/bin/sh;#!/bin/bash;g' /home/freesurfer/bin/fsl_sub_mgh
+
+RUN alias python=/usr/bin/python2
 
 # Configuring access to Jupyter
 RUN mkdir /home/notebooks
