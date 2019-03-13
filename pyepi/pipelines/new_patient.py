@@ -469,6 +469,7 @@ class newpatient:
         ras2vox = np.array([line.split() for line in ras2vox], dtype=np.float)
         contacts = [c for c in all_coords['name'].values]
         probtrac_files = []
+
         for c in contacts:
             native_file, wsl_file = paths.wsl_tempfile('seedmask.txt')
             coords = all_coords[all_coords['name'] == c][['xmri', 'ymri', 'zmri']].values
@@ -479,7 +480,7 @@ class newpatient:
 
             fsl.probtrack_with_seedcoords(subj=subj,
                                           bedpostx_folder=self.SUBJECTS_DIR + subj + '/dmri.bedpostX/',
-                                          seedcoords=wsl_file,
+                                          seedcoords=native_file,
                                           seed2diff_xfm=self.SUBJECTS_DIR + subj + '/dmri/xfms/anatorig2diff.bbr.mat',
                                           seedref=self.SUBJECTS_DIR + subj + '/dmri/brain_anat_orig.nii.gz',
                                           avoidmask=None,
