@@ -104,6 +104,7 @@ RUN sed -i 's;#!/bin/sh;#!/bin/bash;g' /home/freesurfer/bin/bedpostx_mgh
 RUN sed -i 's;#!/bin/sh;#!/bin/bash;g' /home/freesurfer/bin/fsl_sub_mgh
 
 RUN alias python=/usr/bin/python2
+RUN echo "PATH=/usr/bin:$PATH" > /root/.bashrc
 
 # Configuring access to Jupyter
 RUN mkdir /home/notebooks
