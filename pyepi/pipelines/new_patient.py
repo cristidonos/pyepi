@@ -463,7 +463,7 @@ class newpatient:
         email_body.append(log)
         all_coords = pd.read_excel(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
         r = subprocess.run(
-            ['bash', '-i', '-c', 'mri_info --ras2vox-tkr ' + self.SUBJECTS_DIR + subj + '/dmri/brain_anat.nii.gz'],
+            ['bash',  '-c', 'mri_info --ras2vox-tkr ' + self.SUBJECTS_DIR + subj + '/dmri/brain_anat.nii.gz'],
             stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         ras2vox = r.stdout.decode('utf-8').split('\n')[-5:-1]
         ras2vox = np.array([line.split() for line in ras2vox], dtype=np.float)

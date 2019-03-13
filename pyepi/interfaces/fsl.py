@@ -95,7 +95,7 @@ def probtrack_with_seedmask(subj=None, bedpostx_folder=None, seedmask=None, seed
 
     cmd = ' '.join(cmd)
     print(cmd)
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
@@ -199,7 +199,7 @@ def probtrack_with_seedcoords(subj=None, bedpostx_folder=None, seedcoords=None, 
     cmd.append('--opd')  # output pathways distribution anyway
 
     cmd = ' '.join(cmd)
-    result = subprocess.run(['bash', '-i', '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['bash',  '-c', cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if (verbose == 1) or (len(result.stderr) > 0):
         print('\n\n' + result.stdout.decode('utf-8'))
         print('\n' + result.stderr.decode('utf-8'))
