@@ -93,9 +93,9 @@ RUN ["/bin/bash", "-c","\
     pip install git+https://github.com/cristidonos/pyepi"]
 
 #install fsl
-#COPY pyepi/extra/fslinstaller.py $working_dir/fslinstaller.py
-#RUN /usr/bin/python2 $working_dir/fslinstaller.py -d /usr/share/fsl
-RUN apt-get install -y fsl
+COPY pyepi/extra/fslinstaller.py $working_dir/fslinstaller.py
+RUN /usr/bin/python2 $working_dir/fslinstaller.py -d /usr/share/fsl
+#RUN apt-get install -y fsl
 ENV FSLDIR=/usr/share/fsl/5.0
 ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
 ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
