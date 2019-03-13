@@ -83,7 +83,7 @@ ENV PYTHONPATH=""
 COPY pyepi/extra/license.txt $working_dir/freesurfer/license.txt
 
 # Add Anaconda packages
-#ENV PATH /opt/conda/bin:$PATH
+ENV PATH /opt/conda/bin:$PATH
 RUN conda install numpy pandas xlrd openpyxl tqdm matplotlib nibabel git mayavi psutil seaborn jupyter_contrib_nbextensions dcm2niix pip -c conda-forge
 
 # add more packages with pip
