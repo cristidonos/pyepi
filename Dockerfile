@@ -101,8 +101,6 @@ ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
 ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
 
 RUN alias python=/usr/bin/python2
-RUN rm /bin/sh
-RUN ln -s /bin/bash /bin/sh
 
 # Configuring access to Jupyter
 RUN mkdir /home/notebooks
