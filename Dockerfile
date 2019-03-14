@@ -50,12 +50,12 @@ RUN chmod a+rwx $working_dir
 RUN wget -qO- https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.1/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.1.tar.gz | tar zxv --no-same-owner -C /$working_dir
 
 # Configure environment
-ENV FSLDIR=/usr/share/fsl/5.0
+ENV FSLDIR=/usr/share/fsl
 ENV FSLOUTPUTTYPE=NIFTI_GZ
-ENV PATH=/usr/lib/fsl/5.0:$PATH
+ENV PATH=/usr/lib/fsl:$PATH
 ENV FSLMULTIFILEQUIT=TRUE
-ENV POSSUMDIR=/usr/share/fsl/5.0
-ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:$LD_LIBRARY_PATH
+ENV POSSUMDIR=/usr/share/fsl
+ENV LD_LIBRARY_PATH=/usr/lib/fsl:$LD_LIBRARY_PATH
 ENV FSLTCLSH=/usr/bin/tclsh
 ENV FSLWISH=/usr/bin/wish
 ENV FSLOUTPUTTYPE=NIFTI_GZ
@@ -96,9 +96,9 @@ RUN ["/bin/bash", "-c","\
 COPY pyepi/extra/fslinstaller.py $working_dir/fslinstaller.py
 RUN /usr/bin/python2 $working_dir/fslinstaller.py -d /usr/share/fsl
 #RUN apt-get install -y fsl
-ENV FSLDIR=/usr/share/fsl/5.0
+ENV FSLDIR=/usr/share/fsl
 ENV PATH=/usr/bin:$PATH:$FSLDIR/bin
-ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:/usr/share/fsl/5.0/bin
+ENV LD_LIBRARY_PATH=/usr/lib/fsl:/usr/share/fsl/bin
 
 RUN sed -i 's;#!/bin/sh;#!/bin/bash;g' /home/freesurfer/bin/bedpostx_mgh
 RUN sed -i 's;#!/bin/sh;#!/bin/bash;g' /home/freesurfer/bin/fsl_sub_mgh
