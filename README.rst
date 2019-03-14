@@ -26,12 +26,13 @@ Handful of tools for epilepsy research.
 Features
 --------
 
-* Python and command line wrappers for Linux-based neuroimaging tools, accessible from Windows Subsystem for Linux.
+* Python and command line wrappers for Linux-based neuroimaging tools, packed in a Docker container .
 * Currently supported pipelines:
     - Freesurfer's recon-all and CVS registration
     - Tracula
     - Conversion of DWI dicoms
     - Probabilistic tractography with FSL
+
 * Support for SEEG electrode visualization
 
 Credits
