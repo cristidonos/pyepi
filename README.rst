@@ -35,8 +35,9 @@ Features
 
 * Support for SEEG electrode visualization
 
-
-.. include:: docs/usage.rst
+Usage
+-----
+See https://github.com/cristidonos/pyepi/blob/master/docs/usage.rst
 
 Credits
 -------
