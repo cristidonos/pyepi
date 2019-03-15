@@ -4,12 +4,15 @@ Usage
 
 | To install Pyepi, you need to build the Docker container first.
 | The Docker container is based on Ubuntu16 and has installed Miniconda3 with Python3 and all necessary packages, Freesurfer 6, FSL 5.0.
-| Clone Pyepi, change dir to Pyepi's root folder and run: ::
+| Clone Pyepi, change dir to Pyepi's root folder and run:
+
+.. code-block::
 
     docker build -t pyepi .
 
-You can start the container in interactive mode using "pyepi" hostname  to run: ::
+You can start the container in interactive mode using "pyepi" hostname  to run:
 
+.. code-block::
 
     docker run -it -P --hostname pyepi
 
@@ -21,6 +24,8 @@ Custom Pipelines
 ================
 
  However, it is best to write pipelines to automate data processing. A sample pipeline used at the University of Bucharest is provided as an example. To run the pipeline, Pyepi assumes the following folder structure:
+
+.. code-block::
 
  | PARENT_FOLDER
  |    |-- rawdata
@@ -36,13 +41,17 @@ Custom Pipelines
  |       |-- SUBJ001
  |       |-- SUBJ002 and so on.
 
- To start the container with a mounted volume, use the command below, with the correct PARENT_FOLDER path: ::
 
-    docker run -it -P --hostname pyepi -v /PARENT_FOLDER/:/home/host/ pyepi
+To start the container with a mounted volume, use the command below, with the correct PARENT_FOLDER path:
+
+.. code-block::
+
+  docker run -it -P --hostname pyepi -v /PARENT_FOLDER/:/home/host/ pyepi
 
 
+Run the UNIBUC pipeline with:
 
-Run the UNIBUC pipeline with: ::
+.. code-block::
 
-    epi-pipe newpatient SUBJID
+  epi-pipe newpatient SUBJID
 
