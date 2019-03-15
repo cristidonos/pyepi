@@ -1,6 +1,5 @@
-=====
 Usage
-=====
+-----
 
 | To install Pyepi, you need to build the Docker container first.
 | The Docker container is based on Ubuntu16 and has installed Miniconda3 with Python3 and all necessary packages, Freesurfer 6, FSL 5.0.
@@ -19,11 +18,11 @@ You can start the container in interactive mode using "pyepi" hostname  to run:
 
 
 
-================
-Custom Pipelines
-================
 
- However, it is best to write pipelines to automate data processing. A sample pipeline used at the University of Bucharest is provided as an example. To run the pipeline, Pyepi assumes the following folder structure:
+Custom Pipelines
+----------------
+
+However, it is best to write pipelines to automate data processing. A sample pipeline used at the University of Bucharest is provided as an example. To run the pipeline, Pyepi assumes the following folder structure:
 
 .. code-block::
 
