@@ -35,6 +35,9 @@ Features
 
 * Support for SEEG electrode visualization
 
+
+.. include:: docs/usage.rst
+
 Credits
 -------
 

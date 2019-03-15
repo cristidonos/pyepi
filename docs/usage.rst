@@ -15,11 +15,12 @@ You can start the container in interactive mode using "pyepi" hostname  to run: 
 
 
 
-=====
-Custom Pipelines
-=====
 
-However, it is best to write pipelines to automate data processing. A sample pipeline used at the University of Bucharest is provided as an example. To run the pipeline, Pyepi assumes the following folder structure:
+================
+Custom Pipelines
+================
+
+ However, it is best to write pipelines to automate data processing. A sample pipeline used at the University of Bucharest is provided as an example. To run the pipeline, Pyepi assumes the following folder structure:
 
  | PARENT_FOLDER
  |    |-- rawdata
@@ -35,7 +36,7 @@ However, it is best to write pipelines to automate data processing. A sample pip
  |       |-- SUBJ001
  |       |-- SUBJ002 and so on.
 
-To start the container with a mounted volume, use the command below, with the correct PARENT_FOLDER path: ::
+ To start the container with a mounted volume, use the command below, with the correct PARENT_FOLDER path: ::
 
     docker run -it -P --hostname pyepi -v /PARENT_FOLDER/:/home/host/ pyepi
 
