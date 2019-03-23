@@ -225,3 +225,11 @@ def load_spes(filename, sheetname=None, protocol='SPES', lowfreq=0, highfreq=0,r
     spes = spes.drop(columns=spes_resp_cols, axis=1)
 
     return spes, sheetname
+
+
+def read_xfm(filename):
+    with open(filename, 'rt') as f:
+        data = f.readlines()
+    xfm = np.stack([line.replace('\n', '').replace(';', '').split() for line in data[-3:]]).astype(np.float)
+    xfm = np.vstack([xfm,np.array([0,0,0,1])])
+    return xfm

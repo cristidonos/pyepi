@@ -271,9 +271,40 @@ class newpatient:
         # mri index in ppr
         scan = [k for k in ppr_scans.values() if k['uid'] == mri_uid][0]
         xfm_ppr = scan['xfm']
-        fscoords = np.array(coords.loc[:, ['x', 'y', 'z', 'dummy']]).dot(scan['wt'].T).dot(np.diag([-1, -1, 1, 1]))
 
+        # compute vox2rpi
+        perm = []
+        for i in [1, 2, 3]:
+            perm.append(np.where(scan['orientation'] == i)[0][0])
+        perm.append(3)  # last row of the matrix does not need to be permuted
+        dirRPI = np.array([-1, 1,
+                           -1])  # RPI axes orientation with respect to the MRI r,c,s in axial orientation (basically LPS to RPI)
+        dirRPI = dirRPI[
+            np.abs(scan['orientation']) - 1]  # Permute directions according to the infoMR.AxesOrientations values
+        vox2rpi = np.diag([1, 1, 1, 1])
+        mask = []
+        for x in scan['orientation'] * dirRPI:
+            mask.append(x < 0)
+        vox2rpi = np.diag(np.append(np.sign(scan['orientation']) * dirRPI * scan['pixel_size'], 1))
+        vox2rpi[0:3, 3] = np.array(mask, dtype=np.int) * (scan['size'] - 1) * scan['pixel_size']
+        vox2rpi = np.take(vox2rpi, perm, axis=0)  # Permute rows
+        # vox 2 ras of the original scan
+        orig = nib.load(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'mri' + os.sep + 'orig' + os.sep +'001.mgz')
+        vox2ras = orig.header.get_affine()
+        # tkRegRAS
         mri_norm = nib.load(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'mri' + os.sep + 'norm.mgz')
+        tkregRAS = np.hstack(
+            [np.vstack([np.diag([1, 1, 1]), mri_norm.header.get('Pxyz_c')]), np.array([[0, 0, 0, 1]]).T]).T
+
+        # coords in norm.mgz coordinates
+        fscoords = np.linalg.inv(tkregRAS).dot(
+            vox2ras.dot(
+                np.linalg.inv(vox2rpi).dot(
+                    np.array(coords.loc[:, ['x', 'y', 'z', 'dummy']]).T
+                )
+            )
+        ).T
+        # voxel coordinates in norm.mgz
         vox_fscoords = np.dot(np.linalg.inv(mri_norm.get_header().get_vox2ras_tkr()), fscoords.T).T
 
         all_coords = pd.concat([coords,
