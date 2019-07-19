@@ -83,7 +83,7 @@ ENV PYTHONPATH=""
 COPY pyepi/extra/license.txt $working_dir/freesurfer/license.txt
 
 # Copy maTT to home folder
-RUN cp -R pyepi/extra/multiAtlasTT $working_dir
+RUN cp -R pyepi/extra/multiAtlasTT/ $working_dir
 
 # Add Anaconda packages
 ENV PATH /opt/conda/bin:$PATH
