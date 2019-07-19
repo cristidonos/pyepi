@@ -49,9 +49,9 @@ import numpy as np
 import pandas as pd
 import psutil
 
+import pyepi
 from pyepi.interfaces import freesurfer, fsl
 from pyepi.tools import paths, notifications, volumes, inout
-
 
 class newpatient:
     RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(hostname=paths.HOSTNAME)
@@ -137,6 +137,13 @@ class newpatient:
         allowed_jobs['verbose'] = True
         allowed_jobs['send_notification_when_done'] = True
         allowed_jobs['save_contact_coordinates'] = True
+
+        if os.path.isdir(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'atlas' + os.sep + 'hcp-mmp'):
+            allowed_jobs['hcpmmp'] = True
+        else:
+            allowed_jobs['hcpmmp'] = False
+            print("ERROR: HCPMMP atlas needs to be added manually before attempting contact identification.")
+
         try:
             t1dir = self.RAW_DATA + os.sep + subj + os.sep + 'T1' + os.sep
             if sys.platform == 'win32':
@@ -428,7 +435,7 @@ class newpatient:
         all_coords = volumes.identify_voxel_location(all_coords,
                                                      self.SUBJECTS_DIR_NATIVE + 'Yeo_JNeurophysiol11_MNI152' + os.sep + 'Yeo2011_7Networks_MNI152_FreeSurferConformed1mm_LiberalMask.nii.gz',
                                                      os.path.dirname(freesurfer.__file__) + os.sep + 'YeoLUT.xlsx',
-                                                     name_prefix='mni')
+                                                     name_prefix='yeo')
         all_coords.to_excel(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
 
         log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
@@ -607,13 +614,36 @@ class newpatient:
         email_body.append(log)
         return email_body
 
+    def run_hcpmmp(self, subj, email_body):
+        log = '\n* Identifying contacts on HCP-MMP atlas.'
+        print(log)
+        email_body.append(log)
+        tstart = time.time()
+        log = '    + Starting at : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(log)
+
+        email_body.append(log)
+        all_coords = pd.read_excel(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
+        all_coords = volumes.identify_voxel_location(all_coords,
+                                                 self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'atlas' + os.sep + 'hcp-mmp' + os.sep + 'hcp-mmp.mgz',
+                                                 os.path.dirname(freesurfer.__file__) + os.sep + 'HCPMMPLUT.xlsx',
+                                                 atlas_prefix='hcpmmp')
+        all_coords.to_excel(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
+
+
+        log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
+        print(log)
+        email_body.append(log)
+        return email_body
+
+
     def __init__(self, subj, args):
         self.subj = subj
         self.verbose = False
 
         # PARAMETERS (using paths in WSL format, ie. /mnt/d/....)
         job_list = ['verbose', 'recon', 'tracula', 'cvs_subj2mni', 'cvs_mni2subj', 'save_contact_coordinates',
-                    'morphcontacts',
+                    'morphcontacts', 'hcpmmp',
                     'probtrack', 'tessprobtrack', 'morphprobtrack', 'send_notification_when_done']
         jobs={}
         _ = [jobs.__setitem__(k, True) for k in job_list]
@@ -634,6 +664,10 @@ class newpatient:
         # save contact coordinates in Freesurfer's space
         if jobs['save_contact_coordinates']:
             email_body = self.run_save_contact_coordinates(subj, data_dir, email_body)
+
+        # add hcpmmp atlas to subject
+        if jobs['add_hcpmmp']:
+            email_body = self.run_hcpmmp(subj, email_body)
 
         # CVS
         if jobs['cvs_subj2mni']:

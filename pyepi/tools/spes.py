@@ -57,9 +57,11 @@ def get_cceps(subj, protocol='SPES', lowfreq=0, highfreq=0, rmswindow=100, rmswi
     """
 
     RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(paths.HOSTNAME)
-    cceps, sheetname = inout.load_spes(os.path.join(SUBJECTS_DIR_NATIVE, subj, 'SPES', 'SPES.xls'),
-                                       sheetname='SEEG', protocol=protocol, lowfreq=lowfreq, highfreq=highfreq,
+    cceps, sheetname = inout.load_spes(os.path.join(SUBJECTS_DIR_NATIVE, subj, 'SPES', 'SPES.xlsx'),
+                                       sheetname=subj, protocol=protocol, lowfreq=lowfreq, highfreq=highfreq,
                                        rmswindow=rmswindow, rmswindowstart=rmswindowstart)
+    stim_pairs, contact1, contact2 = spes.get_stim_contact(cceps)
+
     if filter_zscore is not None:
         # filter out outliers > XX SD (mostly channels adjacent to stimulation site, but who knows what other artefacts...
         cceps = cceps[zscore(cceps['mean_rms']) < filter_zscore].reset_index(drop=True)
@@ -76,7 +78,7 @@ def get_cceps(subj, protocol='SPES', lowfreq=0, highfreq=0, rmswindow=100, rmswi
 
     # filter out responses on stimulation contacts
     cceps = cceps[cceps.apply(lambda x: x['RespContact'] not in x['StimContact'], axis=1)].reset_index(drop=True)
-    return cceps, q3
+    return cceps, q3, stim_pairs, contact1, contact2
 
 
 def average_by_structure(subj, flow='outbound', localization='most_likely', protocol='SPES', lowfreq=0, highfreq=0,

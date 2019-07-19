@@ -145,7 +145,7 @@ class CircularGraph:
 
     def draw_nodes(self):
         for n in np.arange(0, len(self.adjacency_matrix)):
-            new_node = self.Node(x=np.cos(self.t[n]), y=np.sin(self.t[n]), label=self.labels[n], label_padding=10,
+            new_node = self.Node(x=np.cos(self.t[n]), y=np.sin(self.t[n]), label=self.labels[n], label_padding=self.label_padding,
                                  marker='o',
                                  label_colors=self.label_colors[n], node_colors=self.node_colors[n],
                                  connection_colors=self.connection_colors[n], connections=self.adjacency_matrix[n, :],

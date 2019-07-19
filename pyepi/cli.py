@@ -315,6 +315,7 @@ def trac(job, **kwargs):
 @click.option('--morphprobtrack/--no-morphprobtrack', default=True, help='morph probabilistic tractography to MNI')
 @click.option('--morphcontacts/--no-morphcontacts', default=True, help='morph contacts to MNI')
 @click.option('--save_contact_coordinates/--no-save_contact_coordinates', default=True, help='save contact coordinate in xls format')
+@click.option('--hcpmmp/--no-hcpmmp', default=True, help='identify contacts in HCPMMP atlas')
 def pipeline(pipe, subject, **kwargs):
     """ UNIBUC pipelines
 
@@ -354,13 +355,13 @@ def pipeline(pipe, subject, **kwargs):
         # p.wait()
 
     if pipe == 'report':
-        if not os.path.isfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls')):
-            print("WARNING: SPES.xls file is missing from the raw data folder. Connectivity will not show in the report.")
+        if not os.path.isfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xlsx')):
+            print("WARNING: SPES.xlsx file is missing from the raw data folder. Connectivity will not show in the report.")
         else:
             overwrite = False
-            if  os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls')):
+            if  os.path.isfile(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xlsx')):
                 choice = input(
-                    '    -> SPES.xls already exists in the reports folder. Do you want to overwrite it with the '
+                    '    -> SPES.xlsx already exists in the reports folder. Do you want to overwrite it with the '
                     'version from raw data folder? [y/n] (default: y) : ')
                 if (choice == '') or (choice.lower() == 'y'):
                     overwrite = True
@@ -368,8 +369,8 @@ def pipeline(pipe, subject, **kwargs):
                 overwrite = True
             if overwrite:
                 os.makedirs(os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES'), exist_ok=True)
-                shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xls'),
-                                os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xls'))
+                shutil.copyfile(os.path.join(RAW_DATA_NATIVE, subject, 'SPES.xlsx'),
+                                os.path.join(SUBJECTS_DIR_NATIVE, subject, 'SPES', 'SPES.xlsx'))
         run_list = ['python', os.path.join(pipelines_dir, 'generate_report.py'), subject]
         for line in paths.execute(run_list):
             print(line)

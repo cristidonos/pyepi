@@ -5,6 +5,9 @@ Volume manipulation toolkit.
 import numpy as np
 import nibabel as nib
 import pandas as pd
+from pyepi.tools import paths
+import os
+from tqdm import tqdm
 
 
 def normalize(input_volume, output_volume, normalize_by='max'):
@@ -34,7 +37,7 @@ def normalize(input_volume, output_volume, normalize_by='max'):
         nib.save(new_vol, output_volume)
 
 
-def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None):
+def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None, atlas_prefix=None):
     """ Identify structure of each voxel, based on segmentation in atlas_volume.
 
     coords: Pandas dataframe
@@ -53,6 +56,8 @@ def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None):
         and the brain structure from which it is most likely to record brain activity from
 
     """
+    if atlas_prefix is None:
+        atlas_prefix = name_prefix
     atlas = nib.load(atlas_volume).get_data()
     if len(atlas.shape) > 3:
         atlas = np.squeeze(atlas)
@@ -74,7 +79,7 @@ def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None):
             y = np.round(coords.loc[i][name_prefix + '_ymrivox']).astype(np.int)
             z = np.round(coords.loc[i][name_prefix + '_zmrivox']).astype(np.int)
 
-        if (0<= x <= 256) & (0<= y <= 256) & (0<= z <= 256):
+        if (0 <= x <= 256) & (0 <= y <= 256) & (0 <= z <= 256):
             atlas_value = atlas[x][y][z]
             center_voxel.append(lut[lut['No'] == atlas_value]['Name'].values[0])
             v = np.zeros((3, 3, 3))
@@ -128,12 +133,12 @@ def identify_voxel_location(coords, atlas_volume, lut_table, name_prefix=None):
             # TODO: figure out why some contacts don't morph mni, resulting in an empty volume.
             most_likely.append('Unknown')
             center_voxel.append('Unknown')
-    if name_prefix is None:
+    if atlas_prefix is None:
         ecol = 'exact'
         mlcol = 'most_likely'
     else:
-        ecol = name_prefix + '_' + 'exact'
-        mlcol = name_prefix + '_' + 'most_likely'
+        ecol = atlas_prefix + '_' + 'exact'
+        mlcol = atlas_prefix + '_' + 'most_likely'
 
     coords = pd.concat([coords,
                         pd.DataFrame(center_voxel, columns=[ecol]),
@@ -254,3 +259,42 @@ def contact_volume_to_mni_coordinates(contact_volume):
                  'mean_voxel_intensity': mean_voxel_intensity,
                  'std_voxel_intensity': std_voxel_intensity}
     return mri_coords, mri_vox, mri_stats
+
+
+def get_cvs_weights(subj, save_to_file=True):
+    """
+    Get voxel weights for each contact in MNI space. Also compute "true weight", which is defined per contact
+    as the voxel's weight divided by the sum of all contact's weights.
+
+    Parameters
+    ----------
+    subj: string
+        Subject's ID
+    save_to_file: bool
+        If True will save the weights in Subjects root folder
+    Returns
+    vox_tab : Pandas Dataframe
+        Table with each contact's voxels' location in MNI space, with cvs weights and true weights
+    -------
+
+    """
+    RAW_DATA, RAW_DATA_NATIVE, SUBJECTS_DIR, SUBJECTS_DIR_NATIVE = paths.set_paths(hostname=paths.HOSTNAME)
+    vox_tab = pd.DataFrame(columns=['x', 'y', 'z', 'cvs_weight'])
+    contact_files = os.listdir(SUBJECTS_DIR_NATIVE + subj + os.sep + 'contacts_cvs_avg35')
+    for cf in tqdm(contact_files, desc='Loading cvs contact files...'):
+        vol = nib.load(
+            SUBJECTS_DIR_NATIVE + subj + os.sep + 'contacts_cvs_avg35' + os.sep + cf)
+        vox_mni = np.array(np.where(vol.get_data() > 0)).T
+        vox_cvs_factor = np.array(vol.get_data()[vox_mni[:, 0], vox_mni[:, 1], vox_mni[:, 2]], ndmin=2)
+        vox_tab = pd.concat([
+            vox_tab,
+            pd.DataFrame(np.hstack([vox_mni, vox_cvs_factor.T]), columns=['x', 'y', 'z', 'cvs_weight'],
+                         index=[cf[:-4].replace("+", "'")] * vox_mni.shape[0])
+        ], axis=0)
+    vox_tab['name'] = vox_tab.index
+    denom = vox_tab.groupby(by=vox_tab.index)['cvs_weight'].sum().to_dict()
+    vox_tab['true_weight'] = vox_tab.apply(lambda row: (row.cvs_weight / denom[row.name]), axis=1)
+    vox_tab = vox_tab.drop(columns=['name'])
+    if save_to_file:
+        vox_tab.to_excel(SUBJECTS_DIR_NATIVE + subj + os.sep + 'CVS_weights.xlsx',index_label='Contact')
+    return vox_tab
