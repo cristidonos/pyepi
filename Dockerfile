@@ -82,9 +82,6 @@ ENV PYTHONPATH=""
 # Copy freesurfer license
 COPY pyepi/extra/license.txt $working_dir/freesurfer/license.txt
 
-# Copy maTT to home folder
-RUN cp -R pyepi/extra/multiAtlasTT/ $working_dir
-
 # Add Anaconda packages
 ENV PATH /opt/conda/bin:$PATH
 RUN conda install numpy pandas xlrd openpyxl tqdm matplotlib nibabel git mayavi psutil seaborn jupyter_contrib_nbextensions dcm2niix pip -c conda-forge
@@ -94,6 +91,10 @@ RUN ["/bin/bash", "-c","\
     pip install git+https://github.com/alex-sherman/deco &&\
     pip install git+https://github.com/cristidonos/PySurfer &&\
     pip install git+https://github.com/cristidonos/pyepi"]
+
+# Copy maTT to home folder
+RUN cp -R /opt/conda/lib/python3.6/site-packages/pyepi/extra/multiAtlasTT /home
+
 
 #install fsl
 COPY pyepi/extra/fslinstaller.py $working_dir/fslinstaller.py
