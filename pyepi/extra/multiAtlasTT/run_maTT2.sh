@@ -58,7 +58,7 @@ touch $OUT
 
 start=`date +%s`
 
-cmd="${scriptBaseDir}/src/maTT2_applyGCS.sh \
+cmd="bash ${scriptBaseDir}/src/maTT2_applyGCS.sh \
         -d ${inputFSDir} \
         -o ${outputDir} \
         -f 6p0 \

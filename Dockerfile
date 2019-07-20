@@ -47,7 +47,7 @@ WORKDIR $working_dir
 RUN chmod a+rwx $working_dir
 
 # Freesurfer
-RUN wget -qO- https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.1/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.1.tar.gz | tar zxv --no-same-owner -C /$working_dir
+RUN wget -qO- https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz | tar zxv --no-same-owner -C /$working_dir
 
 # Configure environment
 ENV FSLDIR=/usr/share/fsl
@@ -93,7 +93,9 @@ RUN ["/bin/bash", "-c","\
     pip install git+https://github.com/cristidonos/pyepi"]
 
 # Copy maTT to home folder
-RUN cp -R /opt/conda/lib/python3.6/site-packages/pyepi/extra/multiAtlasTT /home
+RUN cp -R /opt/conda/lib/python3.7/site-packages/pyepi/extra/multiAtlasTT /home
+#RUN ls /opt/conda/lib/
+#RUN cp -R pyepi/extra/multiAtlasTT /home
 
 
 #install fsl
