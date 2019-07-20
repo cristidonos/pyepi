@@ -666,7 +666,7 @@ class newpatient:
             email_body = self.run_save_contact_coordinates(subj, data_dir, email_body)
 
         # add hcpmmp atlas to subject
-        if jobs['add_hcpmmp']:
+        if jobs['hcpmmp']:
             email_body = self.run_hcpmmp(subj, email_body)
 
         # CVS
