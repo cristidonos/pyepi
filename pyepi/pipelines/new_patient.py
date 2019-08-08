@@ -435,7 +435,7 @@ class newpatient:
         all_coords = volumes.identify_voxel_location(all_coords,
                                                      self.SUBJECTS_DIR_NATIVE + 'Yeo_JNeurophysiol11_MNI152' + os.sep + 'Yeo2011_7Networks_MNI152_FreeSurferConformed1mm_LiberalMask.nii.gz',
                                                      os.path.dirname(freesurfer.__file__) + os.sep + 'YeoLUT.xlsx',
-                                                     name_prefix='yeo')
+                                                     name_prefix='mni', atlas_prefix='yeo')
         all_coords.to_excel(self.SUBJECTS_DIR_NATIVE + subj + os.sep + 'Contact_coordinates.xlsx')
 
         log = '    + Finished in ' + str((time.time() - tstart) / 3600) + ' hours.'
