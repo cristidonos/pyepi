@@ -282,7 +282,8 @@ class newpatient:
         # compute vox2rpi
         perm = []
         for i in [1, 2, 3]:
-            perm.append(np.where(scan['orientation'] == i)[0][0])
+            # perm.append(np.where(scan['orientation'] == i)[0][0])
+            perm.append(np.where(np.abs(scan['orientation']) == i)[0][0])
         perm.append(3)  # last row of the matrix does not need to be permuted
         dirRPI = np.array([-1, 1,
                            -1])  # RPI axes orientation with respect to the MRI r,c,s in axial orientation (basically LPS to RPI)
