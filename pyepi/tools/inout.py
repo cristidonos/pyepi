@@ -45,11 +45,12 @@ def read_ppr(filename):
             uids[sstr[0]] = sstr[-1]
         if ('IMAGE INFO' in ppr[n]) & ('//' not in ppr[n]) & ('REF' not in ppr[n]):
             sstr = ppr[n].replace('\n', '').split(sep=' ')
+            sstr = [s for s in sstr if len(s)>0]
             ppr_scans[sstr[0]] = {}
-            ppr_scans[sstr[0]]['type'] = sstr[17]
-            ppr_scans[sstr[0]]['size'] = np.array(sstr[5:8], dtype=int)
-            ppr_scans[sstr[0]]['pixel_size'] = np.array(sstr[8:11], dtype=float)
-            ppr_scans[sstr[0]]['orientation'] = np.array(sstr[11:14], dtype=int)
+            ppr_scans[sstr[0]]['type'] = sstr[15]
+            ppr_scans[sstr[0]]['size'] = np.array(sstr[3:6], dtype=int)
+            ppr_scans[sstr[0]]['pixel_size'] = np.array(sstr[6:9], dtype=float)
+            ppr_scans[sstr[0]]['orientation'] = np.array(sstr[9:12], dtype=int)
             # compute world transforms
             if np.array_equal(ppr_scans[sstr[0]]['orientation'], np.array([1, 2, 3])):
                 # axial
@@ -89,7 +90,7 @@ def read_ppr(filename):
                                       dtype=float)
             ppr_anat['MP'] = np.array([float(i) for i in ppr[n + 3].replace('\n', '').split(sep=' ') if len(i)],
                                       dtype=float)
-        if ('TRAJECTORY' in ppr[n]):
+        if ('TRAJECTORY' in ppr[n])& ('//' not in ppr[n]):
             n += 1
             while '"' in ppr[n]:
                 sstr = [i for i in ppr[n].replace('\n', '').replace('"', '').split(sep=' ') if len(i)]
