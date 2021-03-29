@@ -31,7 +31,7 @@ py==1.5.4
 pydicom==1.1.0
 pyepi==0.1.0
 pyface==6.0.0
-Pygments==2.2.0
+Pygments==2.7.4
 pyparsing==2.2.0
 pyreadline==2.1
 git+git://github.com/cristidonos/pysurfer@master
