@@ -27,7 +27,7 @@ pandas==0.23.4
 patsy==0.5.0
 pluggy==0.7.1
 psutil==5.4.7
-py==1.5.4
+py==1.10.0
 pydicom==1.1.0
 pyepi==0.1.0
 pyface==6.0.0
